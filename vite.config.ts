@@ -8,7 +8,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     define: {
       // Polyfill process.env agar kode eksisting yang menggunakannya tetap berjalan
-      'process.env': env
+      // Gunakan JSON.stringify untuk memastikan nilai terdefinisi dengan benar sebagai string/objek di client
+      'process.env': JSON.stringify(env)
     },
     build: {
       chunkSizeWarningLimit: 1600, // Menaikkan batas peringatan ukuran chunk menjadi 1600 kB

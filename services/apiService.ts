@@ -58,7 +58,7 @@ export const apiService = {
       .select('*');
     
     if (error) return [];
-    return data.map(u => ({
+    return data.map((u: any) => ({
       ...u,
       fullName: u.full_name,
       birthInfo: u.birth_info,
@@ -158,11 +158,11 @@ export const apiService = {
         if (!student.nis) continue; // Skip if no NIS
 
         // Find existing user by student_id
-        let existingUser = users.find(u => u.student_id === student.id);
+        let existingUser = users.find((u: any) => u.student_id === student.id);
 
         // If not found by ID, try finding by username (NIS)
         if (!existingUser) {
-           existingUser = users.find(u => u.username === student.nis);
+           existingUser = users.find((u: any) => u.username === student.nis);
         }
 
         const userData = {
@@ -198,7 +198,7 @@ export const apiService = {
   getStudents: async (currentUser: User | null): Promise<Student[]> => {
     const { data, error } = await supabase.from('students').select('*');
     if (error) return [];
-    return data.map(s => ({
+    return data.map((s: any) => ({
       ...s,
       classId: s.class_id,
       birthPlace: s.birth_place,
@@ -347,7 +347,7 @@ export const apiService = {
   getAgendas: async (currentUser: User | null): Promise<AgendaItem[]> => {
     const { data, error } = await supabase.from('agendas').select('*');
     if (error) return [];
-    return data.map(a => ({ ...a, classId: a.class_id }));
+    return data.map((a: any) => ({ ...a, classId: a.class_id }));
   },
   createAgenda: async (agenda: AgendaItem): Promise<void> => {
     console.log("Creating agenda:", agenda);
@@ -381,7 +381,7 @@ export const apiService = {
     if (error) return [];
     
     const gradeMap: Record<string, GradeRecord> = {};
-    data.forEach(row => {
+    data.forEach((row: any) => {
       if (!gradeMap[row.student_id]) {
         gradeMap[row.student_id] = {
           studentId: row.student_id,
@@ -417,7 +417,7 @@ export const apiService = {
   getCounselingLogs: async (currentUser: User | null): Promise<BehaviorLog[]> => {
     const { data, error } = await supabase.from('counseling').select('*');
     if (error) return [];
-    return data.map(l => ({
+    return data.map((l: any) => ({
       ...l,
       classId: l.class_id,
       studentId: l.student_id,
@@ -443,7 +443,7 @@ export const apiService = {
   getExtracurriculars: async (currentUser: User | null): Promise<Extracurricular[]> => {
     const { data, error } = await supabase.from('extracurriculars').select('*');
     if (error) return [];
-    return data.map(e => ({ ...e, classId: e.class_id }));
+    return data.map((e: any) => ({ ...e, classId: e.class_id }));
   },
   createExtracurricular: async (extra: Extracurricular): Promise<void> => {
     console.log("Creating extracurricular:", extra);
@@ -476,7 +476,7 @@ export const apiService = {
     const { data, error } = await supabase.from('profiles').select('*');
     if (error) return {};
     const profiles: any = {};
-    data.forEach(p => {
+    data.forEach((p: any) => {
       profiles[p.id] = p.data;
     });
     return profiles;
@@ -493,7 +493,7 @@ export const apiService = {
   getHolidays: async (currentUser: User | null): Promise<Holiday[]> => {
     const { data, error } = await supabase.from('holidays').select('*');
     if (error) return [];
-    return data.map(h => ({ ...h, classId: h.class_id }));
+    return data.map((h: any) => ({ ...h, classId: h.class_id }));
   },
   saveHolidayBatch: async (holidays: Omit<Holiday, 'id'>[]): Promise<void> => {
     const dbHolidays = holidays.map(h => ({
@@ -521,7 +521,7 @@ export const apiService = {
     const { data, error } = await supabase.from('attendance').select('*');
     if (error) return [];
     const allRecords: any[] = [];
-    data.forEach(row => {
+    data.forEach((row: any) => {
       const parts = row.id.split('_');
       const classId = parts[0];
       const date = parts[1];
@@ -575,7 +575,7 @@ export const apiService = {
   getSikapAssessments: async (currentUser: User | null): Promise<SikapAssessment[]> => {
     const { data, error } = await supabase.from('penilaian_sikap').select('*');
     if (error) return [];
-    return data.map(s => ({
+    return data.map((s: any) => ({
       ...s,
       studentId: s.student_id,
       classId: s.class_id,
@@ -599,7 +599,7 @@ export const apiService = {
   getKarakterAssessments: async (currentUser: User | null): Promise<KarakterAssessment[]> => {
     const { data, error } = await supabase.from('penilaian_karakter').select('*');
     if (error) return [];
-    return data.map(k => ({
+    return data.map((k: any) => ({
       ...k,
       studentId: k.student_id,
       classId: k.class_id,
@@ -646,7 +646,7 @@ export const apiService = {
     if (classId !== 'ALL') query.eq('class_id', classId);
     const { data, error } = await query;
     if (error) return [];
-    return data.map(i => ({ ...i, classId: i.class_id }));
+    return data.map((i: any) => ({ ...i, classId: i.class_id }));
   },
   saveInventory: async (item: InventoryItem): Promise<void> => {
     const dbItem = { id: item.id, class_id: item.classId, name: item.name, condition: item.condition, qty: item.qty };
@@ -666,7 +666,7 @@ export const apiService = {
   getGuests: async (classId: string): Promise<Guest[]> => {
     const { data, error } = await supabase.from('guests').select('*').eq('class_id', classId);
     if (error) return [];
-    return data.map(g => ({ ...g, classId: g.class_id }));
+    return data.map((g: any) => ({ ...g, classId: g.class_id }));
   },
   saveGuest: async (guest: Guest): Promise<void> => {
     const dbGuest = { id: guest.id, class_id: guest.classId, date: guest.date, time: guest.time, name: guest.name, agency: guest.agency, purpose: guest.purpose };
@@ -711,7 +711,7 @@ export const apiService = {
   getLearningReports: async (classId: string): Promise<LearningReport[]> => {
     const { data, error } = await supabase.from('learning_reports').select('*').eq('class_id', classId);
     if (error) return [];
-    return data.map(r => ({ ...r, classId: r.class_id, documentLink: r.document_link, teacherName: r.teacher_name }));
+    return data.map((r: any) => ({ ...r, classId: r.class_id, documentLink: r.document_link, teacherName: r.teacher_name }));
   },
   saveLearningReport: async (report: any): Promise<void> => {
     console.log("Saving report:", report);
@@ -744,7 +744,7 @@ export const apiService = {
     if (error) return [];
     
     const entries: LearningJournalEntry[] = [];
-    data.forEach(row => {
+    data.forEach((row: any) => {
         if (Array.isArray(row.content)) {
             row.content.forEach((item: any) => {
                 entries.push({
@@ -820,7 +820,7 @@ export const apiService = {
   getLearningDocumentation: async (classId: string): Promise<LearningDocumentation[]> => {
     const { data, error } = await supabase.from('learning_documentation').select('*').eq('class_id', classId);
     if (error) return [];
-    return data.map(d => ({ ...d, classId: d.class_id, namaKegiatan: d.nama_kegiatan, linkFoto: d.link_foto }));
+    return data.map((d: any) => ({ ...d, classId: d.class_id, namaKegiatan: d.nama_kegiatan, linkFoto: d.link_foto }));
   },
   saveLearningDocumentation: async (doc: any): Promise<void> => {
     const dbDoc = { class_id: doc.classId, nama_kegiatan: doc.namaKegiatan, link_foto: doc.linkFoto };
@@ -838,7 +838,7 @@ export const apiService = {
   getLiaisonLogs: async (currentUser: User | null): Promise<LiaisonLog[]> => {
     const { data, error } = await supabase.from('buku_penghubung').select('*');
     if (error) return [];
-    return data.map(l => ({ ...l, classId: l.class_id, studentId: l.student_id }));
+    return data.map((l: any) => ({ ...l, classId: l.class_id, studentId: l.student_id }));
   },
   saveLiaisonLog: async (log: any): Promise<void> => {
     await supabase.from('buku_penghubung').insert([{
@@ -863,7 +863,7 @@ export const apiService = {
   getPermissionRequests: async (currentUser: User | null): Promise<PermissionRequest[]> => {
     const { data, error } = await supabase.from('permission_requests').select('*');
     if (error) return [];
-    return data.map(p => ({ ...p, classId: p.class_id, studentId: p.student_id }));
+    return data.map((p: any) => ({ ...p, classId: p.class_id, studentId: p.student_id }));
   },
   savePermissionRequest: async (request: any): Promise<void> => {
     await supabase.from('permission_requests').insert([{
@@ -925,7 +925,7 @@ export const apiService = {
   getSupportDocuments: async (currentUser: User | null): Promise<SupportDocument[]> => {
     const { data, error } = await supabase.from('support_documents').select('*');
     if (error) return [];
-    return data.map(d => ({ ...d, classId: d.class_id }));
+    return data.map((d: any) => ({ ...d, classId: d.class_id }));
   },
   saveSupportDocument: async (doc: any): Promise<void> => {
     const dbDoc = { class_id: doc.classId, name: doc.name, url: doc.url };
@@ -1002,7 +1002,7 @@ export const apiService = {
       console.error('Error fetching schedule:', error);
       return [];
     }
-    return data.map(s => ({ id: s.id, day: s.day, time: s.time, subject: s.subject }));
+    return data.map((s: any) => ({ id: s.id, day: s.day, time: s.time, subject: s.subject }));
   },
   saveSchedule: async (classId: string, schedule: ScheduleItem[]): Promise<void> => {
     // First, delete existing schedule for this class
@@ -1033,7 +1033,7 @@ export const apiService = {
   getBookLoans: async (currentUser: User | null): Promise<BookLoan[]> => {
     const { data, error } = await supabase.from('book_loans').select('*');
     if (error) return [];
-    return data.map(l => ({ ...l, classId: l.class_id, studentId: l.student_id, studentName: l.student_name }));
+    return data.map((l: any) => ({ ...l, classId: l.class_id, studentId: l.student_id, studentName: l.student_name }));
   },
   saveBookLoan: async (loan: BookLoan): Promise<void> => {
     const dbLoan = {
@@ -1064,7 +1064,7 @@ export const apiService = {
   getBookInventory: async (classId: string): Promise<BookInventory[]> => {
     const { data, error } = await supabase.from('book_inventory').select('*').eq('class_id', classId);
     if (error) return [];
-    return data.map(b => ({
+    return data.map((b: any) => ({
       ...b,
       classId: b.class_id,
       subjectId: b.subject_id,
