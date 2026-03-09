@@ -1,0 +1,299 @@
+
+
+      :root {
+        /* New Palette */
+        --color-cream: #FFF9D0;
+        --color-baby-blue: #CAF4FF;
+        --color-sky-blue: #A0DEFF;
+        --color-ocean-blue: #5AB2FF;
+      }
+      
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #ffffff; /* Pure White Background */
+      }
+      
+      /* Utility overrides for new palette */
+      .bg-brand-primary { background-color: var(--color-ocean-blue); }
+      .bg-brand-secondary { background-color: var(--color-sky-blue); }
+      .bg-brand-accent { background-color: var(--color-baby-blue); }
+      .bg-brand-warm { background-color: var(--color-cream); }
+      
+      .text-brand-primary { color: var(--color-ocean-blue); }
+      .text-brand-dark { color: #1e3a8a; } /* Dark blue for readability on light backgrounds */
+      
+      /* Gradient Text */
+      .text-gradient-brand {
+        background: linear-gradient(to right, var(--color-ocean-blue), var(--color-sky-blue));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      /* Custom Scrollbar - Matching Theme */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--color-sky-blue); 
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--color-ocean-blue); 
+      }
+
+      /* Scan Line Animation - UPDATED for Full Screen */
+      @keyframes scan {
+        0% { top: 0%; opacity: 0.5; }
+        50% { opacity: 1; }
+        100% { top: 100%; opacity: 0.5; }
+      }
+      .animate-scan {
+        animation: scan 3s linear infinite;
+        position: absolute;
+        left: 0;
+        width: 100%;
+      }
+
+      /* NEW: Soft float animation for logo */
+      @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-6px); }
+        100% { transform: translateY(0px); }
+      }
+      .animate-float {
+        animation: float 4s ease-in-out infinite;
+      }
+
+      /* NEW: Animations for Developer FAB */
+      @keyframes slide-in-right {
+        from { transform: translateX(100px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      .animate-slide-in-right {
+          animation: slide-in-right 0.7s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+      }
+      @keyframes slide-right-left {
+        0%, 100% { transform: translateX(0); }
+        50% { transform: translateX(-8px); }
+      }
+      .animate-slide-rl {
+        animation: slide-right-left 3s ease-in-out infinite 1s; /* Start after 1s delay */
+      }
+
+      /* Marquee Animation */
+      @keyframes marquee {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(-100%); }
+      }
+      .animate-marquee {
+        display: inline-block;
+        animation: marquee 20s linear infinite;
+        padding-left: 100%; /* Ensures text starts from right */
+      }
+
+      /* NEW: Vibrate Animation for Notifications */
+      @keyframes vibrate {
+        0% { transform: translate(0); }
+        20% { transform: translate(-2px, 2px); }
+        40% { transform: translate(-2px, -2px); }
+        60% { transform: translate(2px, 2px); }
+        80% { transform: translate(2px, -2px); }
+        100% { transform: translate(0); }
+      }
+      .animate-vibrate {
+        animation: vibrate 0.3s linear infinite;
+      }
+
+      /* PRINT STYLES GLOBAL */
+      @media print {
+        @page {
+          margin: 0;
+          size: A4 portrait; 
+        }
+        
+        body {
+          background-color: white !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        .no-print {
+          display: none !important;
+        }
+
+        .print-only {
+          display: block !important;
+        }
+
+        /* Force A4 container behavior */
+        .print-container {
+          width: 100%;
+          margin: 0;
+          padding: 0;
+          box-shadow: none !important;
+          border: none !important;
+        }
+
+        /* Orientation helpers */
+        .page-landscape {
+          @page { size: landscape; }
+        }
+        
+        .page-portrait {
+          @page { size: portrait; }
+        }
+
+        /* A4 Sheet Simulation Reset for Print */
+        .sheet-a4 {
+            width: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            page-break-after: always;
+            box-shadow: none !important;
+            border: none !important;
+            transform: none !important; /* Reset scale for print */
+            overflow: visible !important;
+            display: grid !important; /* Ensure grid is active in print */
+            grid-template-columns: repeat(4, 1fr) !important;
+            grid-template-rows: repeat(2, 1fr) !important;
+            gap: 5mm !important; 
+            align-content: start;
+        }
+
+        .id-card-grid {
+           display: grid !important;
+           grid-template-columns: repeat(4, 1fr) !important;
+           gap: 5mm !important; /* Jarak antar kartu */
+           align-content: start;
+        }
+
+        /* Hide scrollbars in print */
+        * {
+          overflow: visible !important;
+        }
+
+        /* --- NEW PRINT AREA LOGIC --- */
+        body * {
+          visibility: hidden;
+        }
+
+        #print-area,
+        #print-area * {
+          visibility: visible;
+        }
+
+        #print-area {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          padding: 20px;
+          /* Optional: Set a specific font for printed documents if desired */
+          /* font-family: "Times New Roman", serif; */
+        }
+      }
+
+      /* Screen Styles for A4 Preview */
+      @media screen {
+          .sheet-wrapper {
+              display: flex;
+              justify-content: center;
+              background-color: #e5e7eb; /* Darker gray background for contrast */
+              padding: 20px;
+              overflow: auto;
+              min-height: 600px; /* Ensure enough scrollable area */
+          }
+          
+          .sheet-a4 {
+              width: 297mm; /* A4 Landscape width */
+              height: 210mm; /* A4 Landscape height */
+              background: white;
+              padding: 10mm;
+              box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+              
+              /* Grid Layout on Screen matches Print */
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              grid-template-rows: repeat(2, 1fr);
+              gap: 5mm; 
+              align-content: start;
+          }
+
+          /* Visual Scaling Container */
+          .scale-container {
+              width: 100%;
+              overflow: hidden;
+              display: flex;
+              justify-content: center;
+          }
+      }
+      
+      /* Specific Print Styles for Report Pickup Log */
+      @media print {
+        body.printing-report-log {
+          background-color: white !important;
+          background-image: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        body.printing-report-log * {
+          visibility: hidden;
+        }
+
+        body.printing-report-log #printable-report-section,
+        body.printing-report-log #printable-report-section * {
+          visibility: visible;
+        }
+        
+        body.printing-report-log #printable-report-section {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          margin: 0;
+          padding: 0;
+          background-color: white !important;
+          box-shadow: none !important;
+          border: none !important;
+        }
+
+        @page report-log-page {
+          size: A4 portrait;
+          margin: 2.54cm;
+        }
+
+        body.printing-report-log #printable-report-section {
+          page: report-log-page;
+        }
+        
+        /* NEW: Force Landscape for ID Card Printing */
+        @page id-card-page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
+        body.printing-id-cards #printable-id-section {
+            page: id-card-page;
+        }
+        body.printing-id-cards * {
+            visibility: hidden;
+        }
+        body.printing-id-cards #printable-id-section,
+        body.printing-id-cards #printable-id-section * {
+            visibility: visible;
+        }
+        body.printing-id-cards #printable-id-section {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: auto;
+            margin: 0;
+            padding: 0;
+        }
+      }

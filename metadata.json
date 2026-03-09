@@ -1,0 +1,7 @@
+{
+  "name": "SAGARA V5_Supabase",
+  "description": "Sistem Akademik dan Administrasi Terintegrasi",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
