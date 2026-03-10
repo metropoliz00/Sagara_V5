@@ -903,13 +903,14 @@ export const apiService = {
         
         const newRecord = {
             studentId: request.student_id,
-            status: request.type, // Assuming 'type' maps to attendance status (e.g., 'sick', 'permit')
+            status: request.type, // Maps to attendance status ('sick', 'permit', 'dispensation')
             notes: request.reason
         };
 
         if (attendance) {
-            // Update existing
-            const records = [...attendance.records, newRecord];
+            // Update existing - filter out old record for this student to avoid duplicates
+            const otherRecords = (attendance.records || []).filter((r: any) => r.studentId !== request.student_id);
+            const records = [...otherRecords, newRecord];
             await supabase.from('attendance').update({ records }).eq('id', attendanceId);
         } else {
             // Create new
@@ -917,6 +918,21 @@ export const apiService = {
                 id: attendanceId,
                 records: [newRecord]
             }]);
+        }
+    } else if (actionStatus === 'reject') {
+        // If rejected, ensure it's NOT in attendance (remove if exists)
+        const attendanceId = `${request.class_id}_${request.date}`;
+        const { data: attendance } = await supabase
+            .from('attendance')
+            .select('*')
+            .eq('id', attendanceId)
+            .single();
+        
+        if (attendance && attendance.records) {
+            const filteredRecords = attendance.records.filter((r: any) => r.studentId !== request.student_id);
+            if (filteredRecords.length !== attendance.records.length) {
+                await supabase.from('attendance').update({ records: filteredRecords }).eq('id', attendanceId);
+            }
         }
     }
   },
