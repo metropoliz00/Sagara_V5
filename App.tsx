@@ -31,7 +31,7 @@ import { ViewState, Student, AgendaItem, Extracurricular, BehaviorLog, GradeReco
 import { MOCK_SUBJECTS, MOCK_STUDENTS, MOCK_EXTRACURRICULARS } from './constants';
 import { apiService } from './services/apiService';
 import { cacheService } from './src/services/cacheService';
-import { Menu, Loader2, RefreshCw, AlertCircle, CheckCircle, WifiOff, ChevronDown, UserCog, LogOut, Filter, Bell, X, XCircle, MessageSquare } from 'lucide-react';
+import { Menu, Loader2, RefreshCw, AlertCircle, CheckCircle, WifiOff, ChevronDown, UserCog, LogOut, Filter, Bell, X, XCircle, Send } from 'lucide-react';
 
 const App: React.FC = () => {
   // -- STATE PERSISTENCE INIT --
@@ -1836,7 +1836,7 @@ const App: React.FC = () => {
                         }`}
                         title="Buku Penghubung"
                      >
-                         <MessageSquare size={20} />
+                         <Send size={20} className="rotate-[-45deg]" />
                          {unreadLiaisonCount > 0 && (
                              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
                                  {unreadLiaisonCount}

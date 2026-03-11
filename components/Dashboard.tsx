@@ -6,7 +6,7 @@ import {
 import { Student, AgendaItem, Holiday, ViewState, GradeRecord, Subject, EmploymentLink, PermissionRequest, SchoolProfileData, LearningDocumentation, LearningReport } from '../types';
 import { 
   Users, UserCheck, Calendar, FileText, TrendingUp, 
-  Plus, Bell, ChevronRight, CheckCircle, AlertCircle, 
+  Plus, Send, Bell, ChevronRight, CheckCircle, AlertCircle, 
   GraduationCap, BookOpen, Clock, CalendarRange,
   Activity, XCircle, ExternalLink, Link as LinkIcon, Mail, Info, Camera, ChevronLeft,
   Sun, Moon, CloudSun, Sunset
@@ -398,7 +398,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 }`}
                 title="Buku Penghubung"
             >
-                <Bell size={24} />
+                <Send size={24} className="rotate-[-45deg]" />
                 {hasNewMessages && (
                     <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-bounce border-2 border-white">
                         {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
