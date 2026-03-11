@@ -27,6 +27,7 @@ import SchoolAssetsAdmin from './components/SchoolAssetsAdmin';
 import BOSManagement from './components/BOSManagement'; // NEW IMPORT
 import BookLoanView from './components/BookLoanView';
 import CustomModal from './components/CustomModal'; 
+import PaperPlaneIcon from './components/PaperPlaneIcon';
 import { ViewState, Student, AgendaItem, Extracurricular, BehaviorLog, GradeRecord, TeacherProfileData, SchoolProfileData, User, Holiday, SikapAssessment, KarakterAssessment, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, LearningJournalEntry, SupportDocument, InventoryItem, SchoolAsset, BOSTransaction, LearningDocumentation, BookLoan, BookInventory } from './types';
 import { MOCK_SUBJECTS, MOCK_STUDENTS, MOCK_EXTRACURRICULARS } from './constants';
 import { apiService } from './services/apiService';
@@ -1826,17 +1827,17 @@ const App: React.FC = () => {
           <div className="flex items-center space-x-4">
              {!isStudentRole && (
                  <div className="flex items-center space-x-2">
-                     {/* Liaison Notification Bell */}
+                     {/* Liaison Notification Paper Plane */}
                      <button 
                         onClick={() => setCurrentView('liaison-book')}
                         className={`p-2 rounded-full transition-all relative ${
                             unreadLiaisonCount > 0 
-                            ? 'text-amber-500 bg-amber-50 animate-vibrate' 
-                            : 'text-gray-500 hover:text-[#5AB2FF] hover:bg-[#CAF4FF]/50'
+                            ? 'text-purple-500 bg-purple-50 animate-vibrate' 
+                            : 'text-gray-500 hover:text-purple-500 hover:bg-purple-50'
                         }`}
                         title="Buku Penghubung"
                      >
-                         <Send size={20} className="rotate-[-45deg]" />
+                         <PaperPlaneIcon size={20} color={unreadLiaisonCount > 0 ? "#8B5CF6" : "currentColor"} />
                          {unreadLiaisonCount > 0 && (
                              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
                                  {unreadLiaisonCount}

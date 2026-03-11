@@ -3,6 +3,7 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, RadialBarChart, RadialBar, Legend 
 } from 'recharts';
+import PaperPlaneIcon from './PaperPlaneIcon';
 import { Student, AgendaItem, Holiday, ViewState, GradeRecord, Subject, EmploymentLink, PermissionRequest, SchoolProfileData, LearningDocumentation, LearningReport } from '../types';
 import { 
   Users, UserCheck, Calendar, FileText, TrendingUp, 
@@ -393,12 +394,12 @@ const Dashboard: React.FC<DashboardProps> = ({
                 onClick={() => onChangeView('liaison-book')}
                 className={`relative bg-white p-2.5 rounded-xl shadow-sm border border-gray-100 transition-all ${
                     hasNewMessages 
-                    ? 'text-indigo-600 border-indigo-200 bg-indigo-50 animate-vibrate' 
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600'
+                    ? 'text-purple-600 border-purple-200 bg-purple-50 animate-vibrate' 
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-purple-600'
                 }`}
                 title="Buku Penghubung"
             >
-                <Send size={24} className="rotate-[-45deg]" />
+                <PaperPlaneIcon size={24} color={hasNewMessages ? "#9333EA" : "currentColor"} />
                 {hasNewMessages && (
                     <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-bounce border-2 border-white">
                         {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
