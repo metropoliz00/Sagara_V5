@@ -703,8 +703,8 @@ export const apiService = {
   saveClassConfig: async (key: string, data: any, classId: string): Promise<void> => {
      const { data: existing } = await supabase.from('class_config').select('data').eq('class_id', classId).single();
      const currentData = existing?.data || {};
-     currentData[key.toLowerCase()] = data;
-     await supabase.from('class_config').upsert({ class_id: classId, data: currentData });
+     currentData[key] = data;
+     await supabase.from('class_config').upsert({ class_id: classId, data: currentData }, { onConflict: 'class_id' });
   },
 
   // --- Learning Reports ---

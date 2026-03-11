@@ -208,7 +208,7 @@ const ClassroomAdmin: React.FC<ClassroomAdminProps> = ({
     try {
         await Promise.all([
             apiService.saveSchedule(classId, newSchedule),
-            apiService.saveClassConfig('TIME_SLOTS', newTimeSlots, classId)
+            apiService.saveClassConfig('timeSlots', newTimeSlots, classId)
         ]);
         onShowNotification('Jadwal pelajaran berhasil disimpan!', 'success');
     } catch (e) {
@@ -219,12 +219,12 @@ const ClassroomAdmin: React.FC<ClassroomAdminProps> = ({
 
   const handleSavePiket = async (newPiket: PiketGroup[]) => {
     setPiketGroups(newPiket);
-    await apiService.saveClassConfig('PIKET', newPiket, classId);
+    await apiService.saveClassConfig('piket', newPiket, classId);
   };
 
   const handleSaveSeating = async () => {
     try {
-      await apiService.saveClassConfig('SEATING', seatingLayouts, classId);
+      await apiService.saveClassConfig('seats', seatingLayouts, classId);
       onShowNotification("Semua denah tempat duduk berhasil disimpan!", 'success');
     } catch {
       onShowNotification("Gagal menyimpan denah.", 'error');
@@ -244,7 +244,7 @@ const ClassroomAdmin: React.FC<ClassroomAdminProps> = ({
   const handleSaveOrganization = async (newOrganization: OrganizationStructure) => {
     setOrganization(newOrganization);
     try {
-      await apiService.saveClassConfig('ORGANIZATION', newOrganization, classId);
+      await apiService.saveClassConfig('organization', newOrganization, classId);
       onShowNotification("Struktur organisasi berhasil disimpan!", 'success');
     } catch {
       onShowNotification("Gagal menyimpan struktur organisasi.", 'error');

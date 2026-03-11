@@ -77,7 +77,9 @@ const GradesView: React.FC<GradesViewProps> = ({
       const newValue = !showRecapToStudents;
       setIsTogglingRecap(true);
       try {
-          await apiService.saveClassConfig('RECAP_SETTINGS', { showStudentRecap: newValue }, classId);
+          const config = await apiService.getClassConfig(classId);
+          const newSettings = { ...(config.settings || {}), showStudentRecap: newValue };
+          await apiService.saveClassConfig('settings', newSettings, classId);
           setShowRecapToStudents(newValue);
           onShowNotification(newValue ? "Rekap rapor sekarang muncul di portal siswa." : "Rekap rapor disembunyikan dari portal siswa.", 'success');
       } catch (e) {
@@ -92,7 +94,9 @@ const GradesView: React.FC<GradesViewProps> = ({
       const newValue = !showSummativeToStudents;
       setIsTogglingSummative(true);
       try {
-          await apiService.saveClassConfig('SUMMATIVE_VISIBILITY', { showSummativeToStudents: newValue }, classId);
+          const config = await apiService.getClassConfig(classId);
+          const newSettings = { ...(config.settings || {}), showSummativeToStudents: newValue };
+          await apiService.saveClassConfig('settings', newSettings, classId);
           setShowSummativeToStudents(newValue);
           onShowNotification(newValue ? "Nilai sumatif sekarang muncul di portal siswa." : "Nilai sumatif disembunyikan dari portal siswa.", 'success');
       } catch (e) {
@@ -165,7 +169,7 @@ const GradesView: React.FC<GradesViewProps> = ({
     if (!isSubjectEditable) return;
     setIsSavingKktp(true);
     try {
-      await apiService.saveClassConfig('KKTP', kktpMap, classId);
+      await apiService.saveClassConfig('kktp', kktpMap, classId);
       onShowNotification(`KKTP untuk ${activeSubject?.name} berhasil diperbarui menjadi ${currentKktp}`, 'success');
     } catch (e) {
       onShowNotification("Gagal menyimpan KKTP", 'error');
