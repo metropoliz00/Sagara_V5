@@ -314,21 +314,27 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
   const getLocalISODate = (date: Date) => { const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, '0'); const d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; };
 
   const attendanceStats = useMemo(() => {
-    // Filter for current month only
+    // Filter for accumulated data based on academic semester
+    // Semester 1 (Ganjil): July (6) - December (11)
+    // Semester 2 (Genap): January (0) - June (5)
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     const todayStr = getLocalISODate(now);
 
-    const allRecords = allAttendance.filter((r: any) => {
+    const isSemester1 = currentMonth >= 6;
+    const startMonth = isSemester1 ? 6 : 0;
+
+    const accumulatedRecords = allAttendance.filter((r: any) => {
         const recordDate = new Date(r.date);
         return String(r.studentId) === String(student.id) && 
-               recordDate.getMonth() === currentMonth && 
-               recordDate.getFullYear() === currentYear;
+               recordDate.getFullYear() === currentYear &&
+               recordDate.getMonth() >= startMonth &&
+               recordDate.getMonth() <= currentMonth;
     });
 
     const counts = { present: 0, sick: 0, permit: 0, alpha: 0, dispensation: 0 };
-    allRecords.forEach((r: any) => {
+    accumulatedRecords.forEach((r: any) => {
         if (counts[r.status as keyof typeof counts] !== undefined) {
             counts[r.status as keyof typeof counts]++;
         }
@@ -344,7 +350,15 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
     const todayRecord = allAttendance.find((r: any) => String(r.studentId) === String(student.id) && r.date === todayStr);
     const todayStatus = todayRecord ? todayRecord.status : null;
 
-    return { percentage, counts, monthName: now.toLocaleString('id-ID', { month: 'long' }), todayStatus };
+    return { 
+        percentage, 
+        counts, 
+        monthName: now.toLocaleString('id-ID', { month: 'long' }), 
+        startMonthName: new Date(currentYear, startMonth).toLocaleString('id-ID', { month: 'long' }),
+        semesterName: isSemester1 ? 'Ganjil' : 'Genap',
+        year: currentYear,
+        todayStatus 
+    };
   }, [student, allAttendance]);
 
   const upcomingAgendas = useMemo(() => {
@@ -570,12 +584,16 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
                       </div>
                   )}
 
-                  {/* 2. Monthly Attendance Stats */}
+                  {/* 2. Accumulated Attendance Stats */}
                   <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                       <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-                          <Activity className="mr-2 text-[#5AB2FF]" size={18}/> Laporan Absensi Bulan {attendanceStats.monthName}
+                          <Activity className="mr-2 text-[#5AB2FF]" size={18}/> Rekap Laporan Absensi Semester {attendanceStats.semesterName} ({attendanceStats.startMonthName} - {attendanceStats.monthName} {attendanceStats.year})
                       </h3>
-                      <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                          <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-center">
+                              <span className="text-2xl font-black text-emerald-600 block mb-1">{attendanceStats.counts.present + attendanceStats.counts.dispensation}</span>
+                              <span className="text-xs font-bold text-emerald-700 uppercase">Hadir</span>
+                          </div>
                           <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl text-center">
                               <span className="text-2xl font-black text-amber-600 block mb-1">{attendanceStats.counts.sick}</span>
                               <span className="text-xs font-bold text-amber-700 uppercase">Sakit</span>
