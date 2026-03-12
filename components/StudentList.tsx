@@ -8,10 +8,11 @@ import {
   AlertTriangle, UserCircle, Trash2, X, FileSpreadsheet, Printer, Upload, Download,
   LayoutGrid, List as ListIcon,
   Image as ImageIcon, PieChart as PieChartIcon,
-  QrCode as QrCodeIcon, Users, ArrowUpCircle, GraduationCap
+  QrCode as QrCodeIcon, Users, ArrowUpCircle, GraduationCap, ChevronDown
 } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 import { apiService } from '../services/apiService';
+import { MOCK_SUBJECTS } from '../constants';
 
 import BiodataTab from './student/BiodataTab';
 import HealthTab from './student/HealthTab';
@@ -50,6 +51,16 @@ const StudentList: React.FC<StudentListProps> = ({
   const { showAlert, showConfirm } = useModal();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [historyFormData, setHistoryFormData] = useState({
+    academicYear: '',
+    semester: '1',
+    classId: '',
+    subjects: {} as Record<string, any>
+  });
+  const historyFileInputRef = useRef<HTMLInputElement>(null);
+  const bulkHistoryFileInputRef = useRef<HTMLInputElement>(null);
 
   // Helper completeness functions
   const calculateCompleteness = (s: Student) => {
@@ -641,6 +652,237 @@ const StudentList: React.FC<StudentListProps> = ({
     );
   }
 
+  const handleAddManualHistory = () => {
+    setHistoryFormData({
+      academicYear: schoolProfile?.year || new Date().getFullYear().toString(),
+      semester: schoolProfile?.semester || '1',
+      classId: selectedStudent?.classId || '',
+      subjects: MOCK_SUBJECTS.reduce((acc, sub) => {
+        acc[sub.name] = { sum1: '', sum2: '', sum3: '', sum4: '', sas: '' };
+        return acc;
+      }, {} as Record<string, any>)
+    });
+    setIsHistoryModalOpen(true);
+  };
+
+  const handleSaveManualHistory = async () => {
+    if (!selectedStudent) return;
+    if (!historyFormData.academicYear || !historyFormData.classId) {
+      onShowNotification("Tahun Ajaran dan Kelas wajib diisi.", "warning");
+      return;
+    }
+
+    try {
+      const historyEntry = {
+        id: `${historyFormData.academicYear}-S${historyFormData.semester}-${historyFormData.classId}-${Date.now()}`,
+        academicYear: historyFormData.academicYear,
+        semester: historyFormData.semester,
+        classId: historyFormData.classId,
+        timestamp: Date.now(),
+        subjects: historyFormData.subjects
+      };
+      await apiService.saveGradeHistory(selectedStudent.id, historyEntry);
+      setGradeHistory(prev => [historyEntry, ...prev]);
+      setIsHistoryModalOpen(false);
+      onShowNotification("History nilai berhasil disimpan!", "success");
+    } catch (error) {
+      console.error("Error saving manual history:", error);
+      onShowNotification("Gagal menyimpan history nilai.", "error");
+    }
+  };
+
+  const handleImportHistoryExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedStudent) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const workbook = XLSX.read(bstr, { type: 'binary' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const data = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        if (data.length === 0) {
+          onShowNotification("File Excel kosong.", "warning");
+          return;
+        }
+
+        const subjects: Record<string, any> = {};
+        data.forEach(row => {
+          const subjectName = row['Mata Pelajaran'] || row['Subject'];
+          if (subjectName) {
+            subjects[subjectName] = {
+              sum1: row['S1'] || row['Sumatif 1'] || '',
+              sum2: row['S2'] || row['Sumatif 2'] || '',
+              sum3: row['S3'] || row['Sumatif 3'] || '',
+              sum4: row['S4'] || row['Sumatif 4'] || '',
+              sas: row['SAS'] || ''
+            };
+          }
+        });
+
+        setHistoryFormData(prev => ({
+          ...prev,
+          subjects: { ...prev.subjects, ...subjects }
+        }));
+        
+        onShowNotification("Data Excel berhasil dibaca. Silakan periksa dan simpan.", "success");
+        setIsHistoryModalOpen(true);
+      } catch (error) {
+        console.error("Error importing history excel:", error);
+        onShowNotification("Gagal membaca file Excel.", "error");
+      }
+    };
+    reader.readAsBinaryString(file);
+    if (historyFileInputRef.current) historyFileInputRef.current.value = '';
+  };
+
+  const handleBulkImportHistoryExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const workbook = XLSX.read(bstr, { type: 'binary' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const data = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        if (data.length === 0) {
+          onShowNotification("File Excel kosong.", "warning");
+          return;
+        }
+
+        onShowNotification(`Memproses ${data.length} baris history nilai...`, "warning");
+
+        // Group by student (NIS or Name) and (Year, Semester, Class)
+        const groupedHistory: Record<string, any> = {};
+
+        data.forEach(row => {
+          const nis = row['NIS'] ? String(row['NIS']) : '';
+          const name = row['Nama'] || row['Nama Lengkap'] || '';
+          const academicYear = row['Tahun Ajaran'] || row['Year'] || '';
+          const semester = String(row['Semester'] || '1');
+          const classIdVal = row['Kelas'] || row['Class'] || '';
+          const subjectName = row['Mata Pelajaran'] || row['Subject'];
+
+          if ((nis || name) && academicYear && classIdVal && subjectName) {
+            // Find student ID
+            const student = students.find(s => (nis && s.nis === nis) || (name && s.name.toLowerCase() === name.toLowerCase()));
+            if (student) {
+              const key = `${student.id}_${academicYear}_${semester}_${classIdVal}`;
+              if (!groupedHistory[key]) {
+                groupedHistory[key] = {
+                  studentId: student.id,
+                  id: `${academicYear}-S${semester}-${classIdVal}-${Date.now()}`,
+                  academicYear,
+                  semester,
+                  classId: classIdVal,
+                  timestamp: Date.now(),
+                  subjects: {}
+                };
+              }
+              groupedHistory[key].subjects[subjectName] = {
+                sum1: row['S1'] || row['Sumatif 1'] || '',
+                sum2: row['S2'] || row['Sumatif 2'] || '',
+                sum3: row['S3'] || row['Sumatif 3'] || '',
+                sum4: row['S4'] || row['Sumatif 4'] || '',
+                sas: row['SAS'] || ''
+              };
+            }
+          }
+        });
+
+        const entries = Object.values(groupedHistory);
+        if (entries.length === 0) {
+          onShowNotification("Tidak ada data history valid yang ditemukan atau siswa tidak cocok.", "warning");
+          return;
+        }
+
+        // Save each entry
+        let successCount = 0;
+        for (const entry of entries) {
+          try {
+            await apiService.saveGradeHistory(entry.studentId, entry);
+            successCount++;
+          } catch (err) {
+            console.error("Error saving bulk entry:", err);
+          }
+        }
+
+        onShowNotification(`Berhasil mengimpor ${successCount} history nilai siswa.`, "success");
+        if (selectedStudent) {
+          // Refresh history if current student was updated
+          const history = await apiService.getGradeHistory(selectedStudent.id);
+          setGradeHistory(history);
+        }
+      } catch (error) {
+        console.error("Error bulk importing history excel:", error);
+        onShowNotification("Gagal memproses impor bulk history.", "error");
+      }
+    };
+    reader.readAsBinaryString(file);
+    if (bulkHistoryFileInputRef.current) bulkHistoryFileInputRef.current.value = '';
+  };
+
+  const handleDownloadBulkHistoryTemplate = () => {
+    const templateData = students.slice(0, 5).flatMap(s => 
+      MOCK_SUBJECTS.map(sub => ({
+        'NIS': s.nis,
+        'Nama': s.name,
+        'Tahun Ajaran': schoolProfile?.year || '2023/2024',
+        'Semester': schoolProfile?.semester || '1',
+        'Kelas': s.classId,
+        'Mata Pelajaran': sub.name,
+        'S1': '',
+        'S2': '',
+        'S3': '',
+        'S4': '',
+        'SAS': ''
+      }))
+    );
+
+    if (templateData.length === 0) {
+      // If no students, just show headers with one example
+      MOCK_SUBJECTS.forEach(sub => {
+        templateData.push({
+          'NIS': '2024001',
+          'Nama': 'Ahmad Santoso',
+          'Tahun Ajaran': '2023/2024',
+          'Semester': '1',
+          'Kelas': '1A',
+          'Mata Pelajaran': sub.name,
+          'S1': '', 'S2': '', 'S3': '', 'S4': '', 'SAS': ''
+        });
+      });
+    }
+    
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template Bulk History");
+    XLSX.writeFile(wb, "template_bulk_history_nilai.xlsx");
+  };
+
+  const handleDownloadHistoryTemplate = () => {
+    const templateData = MOCK_SUBJECTS.map(sub => ({
+      'Mata Pelajaran': sub.name,
+      'S1': '',
+      'S2': '',
+      'S3': '',
+      'S4': '',
+      'SAS': ''
+    }));
+    
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template History Nilai");
+    XLSX.writeFile(wb, `Template_History_Nilai.xlsx`);
+  };
+
   if (selectedStudent) {
     const completeness = calculateCompleteness(selectedStudent);
     return (
@@ -741,9 +983,36 @@ const StudentList: React.FC<StudentListProps> = ({
                 <div className={activeTab === 'economy' ? '' : 'hidden print:block'}><EconomyTab student={selectedStudent} onChange={handleChange} /></div>
                 <div className={activeTab === 'records' ? '' : 'hidden print:block'}><RecordsTab student={selectedStudent} tempAchievements={detailTempAchievements} setTempAchievements={setDetailTempAchievements} tempViolations={detailTempViolations} setTempViolations={setDetailTempViolations}/></div>
                 <div className={activeTab === 'history' ? '' : 'hidden print:block'}>
-                  <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <FileSpreadsheet className="mr-2 text-[#5AB2FF]" size={20} /> History Nilai
-                  </h3>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                      <FileSpreadsheet className="mr-2 text-[#5AB2FF]" size={20} /> History Nilai
+                    </h3>
+                    {!isReadOnly && (
+                      <div className="flex space-x-2 no-print">
+                        <input type="file" ref={historyFileInputRef} onChange={handleImportHistoryExcel} className="hidden" accept=".xlsx, .xls" />
+                        <button 
+                          onClick={handleDownloadHistoryTemplate}
+                          className="text-xs flex items-center space-x-1 bg-white border border-gray-200 text-gray-600 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                          title="Download Template Excel"
+                        >
+                          <FileSpreadsheet size={14} /> <span>Template</span>
+                        </button>
+                        <button 
+                          onClick={() => historyFileInputRef.current?.click()}
+                          className="text-xs flex items-center space-x-1 bg-white border border-gray-200 text-gray-600 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                          title="Import dari Excel"
+                        >
+                          <Upload size={14} /> <span>Import</span>
+                        </button>
+                        <button 
+                          onClick={handleAddManualHistory}
+                          className="text-xs flex items-center space-x-1 bg-[#5AB2FF] text-white px-3 py-1.5 rounded-lg hover:bg-[#A0DEFF] transition-colors shadow-sm"
+                        >
+                          <Plus size={14} /> <span>Tambah Manual</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   {loadingHistory ? (
                     <div className="flex justify-center items-center h-32">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5AB2FF]"></div>
@@ -801,6 +1070,154 @@ const StudentList: React.FC<StudentListProps> = ({
              </div>
           </div>
         </div>
+
+        {/* Manual History Modal */}
+        {isHistoryModalOpen && !isReadOnly && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm no-print">
+            <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+              <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-[#CAF4FF]/30">
+                 <div>
+                   <h3 className="font-bold text-xl text-gray-800">Input Manual History Nilai</h3>
+                   <p className="text-sm text-gray-500">{selectedStudent.name}</p>
+                 </div>
+                 <button onClick={() => setIsHistoryModalOpen(false)} className="p-2 hover:bg-gray-200 rounded-full"><X size={20}/></button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tahun Ajaran</label>
+                    <input 
+                      type="text" 
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#5AB2FF]" 
+                      placeholder="Contoh: 2023/2024"
+                      value={historyFormData.academicYear}
+                      onChange={e => setHistoryFormData({...historyFormData, academicYear: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Semester</label>
+                    <select 
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#5AB2FF]"
+                      value={historyFormData.semester}
+                      onChange={e => setHistoryFormData({...historyFormData, semester: e.target.value})}
+                    >
+                      <option value="1">Semester 1 (Ganjil)</option>
+                      <option value="2">Semester 2 (Genap)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Kelas Saat Itu</label>
+                    <input 
+                      type="text" 
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#5AB2FF]" 
+                      placeholder="Contoh: 4A"
+                      value={historyFormData.classId}
+                      onChange={e => setHistoryFormData({...historyFormData, classId: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto border border-gray-200 rounded-xl">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-gray-50 text-gray-700 font-bold border-b">
+                      <tr>
+                        <th className="px-4 py-3">Mata Pelajaran</th>
+                        <th className="px-4 py-3 text-center">S1</th>
+                        <th className="px-4 py-3 text-center">S2</th>
+                        <th className="px-4 py-3 text-center">S3</th>
+                        <th className="px-4 py-3 text-center">S4</th>
+                        <th className="px-4 py-3 text-center">SAS</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {Object.entries(historyFormData.subjects).map(([subjectName, grades]) => (
+                        <tr key={subjectName}>
+                          <td className="px-4 py-2 font-medium">{subjectName}</td>
+                          <td className="px-4 py-2">
+                            <input 
+                              type="number" 
+                              className="w-16 p-1 border rounded text-center"
+                              value={grades.sum1}
+                              onChange={e => setHistoryFormData({
+                                ...historyFormData,
+                                subjects: {
+                                  ...historyFormData.subjects,
+                                  [subjectName]: { ...grades, sum1: e.target.value }
+                                }
+                              })}
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input 
+                              type="number" 
+                              className="w-16 p-1 border rounded text-center"
+                              value={grades.sum2}
+                              onChange={e => setHistoryFormData({
+                                ...historyFormData,
+                                subjects: {
+                                  ...historyFormData.subjects,
+                                  [subjectName]: { ...grades, sum2: e.target.value }
+                                }
+                              })}
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input 
+                              type="number" 
+                              className="w-16 p-1 border rounded text-center"
+                              value={grades.sum3}
+                              onChange={e => setHistoryFormData({
+                                ...historyFormData,
+                                subjects: {
+                                  ...historyFormData.subjects,
+                                  [subjectName]: { ...grades, sum3: e.target.value }
+                                }
+                              })}
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input 
+                              type="number" 
+                              className="w-16 p-1 border rounded text-center"
+                              value={grades.sum4}
+                              onChange={e => setHistoryFormData({
+                                ...historyFormData,
+                                subjects: {
+                                  ...historyFormData.subjects,
+                                  [subjectName]: { ...grades, sum4: e.target.value }
+                                }
+                              })}
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input 
+                              type="number" 
+                              className="w-16 p-1 border rounded text-center font-bold text-[#5AB2FF]"
+                              value={grades.sas}
+                              onChange={e => setHistoryFormData({
+                                ...historyFormData,
+                                subjects: {
+                                  ...historyFormData.subjects,
+                                  [subjectName]: { ...grades, sas: e.target.value }
+                                }
+                              })}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="p-5 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
+                 <button onClick={() => setIsHistoryModalOpen(false)} className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100">Batal</button>
+                 <button onClick={handleSaveManualHistory} className="px-5 py-2.5 rounded-lg bg-[#5AB2FF] text-white font-bold hover:bg-[#A0DEFF] shadow-md">Simpan History</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -821,12 +1238,42 @@ const StudentList: React.FC<StudentListProps> = ({
               <button onClick={() => setViewType('talents-data')} className={`p-2 rounded-md transition-all ${viewType === 'talents-data' ? 'bg-[#5AB2FF] text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`} title="Data Bakat Minat"><Activity size={18} /></button>
            </div>
            
-           {!isReadOnly && <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx, .xls, .csv" />}
-           {!isReadOnly && <button onClick={handleDownloadTemplate} className="flex items-center space-x-2 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"><FileSpreadsheet size={16} /> <span className="hidden sm:inline">Template</span></button>}
-           {!isReadOnly && <button onClick={handleImportClick} className="flex items-center space-x-2 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"><Upload size={16} /> <span className="hidden sm:inline">Import</span></button>}
-           <button onClick={handleExport} className="flex items-center space-x-2 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"><Download size={16} /> <span className="hidden sm:inline">Export</span></button>
-           <button onClick={handlePrint} className="flex items-center space-x-2 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"><Printer size={16} /> <span>Cetak</span></button>
-           {!isReadOnly && <button onClick={() => { setIsAddModalOpen(true); setAddModalTab('biodata'); }} className="flex items-center space-x-2 bg-[#5AB2FF] hover:bg-[#A0DEFF] text-white px-4 py-2 rounded-lg transition-colors shadow-md"><Plus size={18} /><span>Tambah</span></button>}
+            {!isReadOnly && <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx, .xls, .csv" />}
+            {!isReadOnly && <input type="file" ref={bulkHistoryFileInputRef} onChange={handleBulkImportHistoryExcel} className="hidden" accept=".xlsx, .xls" />}
+            
+            <div className="flex flex-wrap gap-2 no-print">
+              <div className="relative group">
+                <button className="flex items-center space-x-2 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+                  <FileSpreadsheet size={16} /> <span className="hidden sm:inline">Template</span> <ChevronDown size={14} />
+                </button>
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 hidden group-hover:block">
+                  <button onClick={handleDownloadTemplate} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
+                    <Users size={14} className="mr-2" /> Template Siswa
+                  </button>
+                  <button onClick={handleDownloadBulkHistoryTemplate} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
+                    <FileSpreadsheet size={14} className="mr-2" /> Template History
+                  </button>
+                </div>
+              </div>
+
+              <div className="relative group">
+                <button className="flex items-center space-x-2 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+                  <Upload size={16} /> <span className="hidden sm:inline">Import</span> <ChevronDown size={14} />
+                </button>
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 hidden group-hover:block">
+                  <button onClick={handleImportClick} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
+                    <Users size={14} className="mr-2" /> Import Siswa
+                  </button>
+                  <button onClick={() => bulkHistoryFileInputRef.current?.click()} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
+                    <FileSpreadsheet size={14} className="mr-2" /> Import History
+                  </button>
+                </div>
+              </div>
+              
+              <button onClick={handleExport} className="flex items-center space-x-2 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"><Download size={16} /> <span className="hidden sm:inline">Export</span></button>
+              <button onClick={handlePrint} className="flex items-center space-x-2 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"><Printer size={16} /> <span>Cetak</span></button>
+              {!isReadOnly && <button onClick={() => { setIsAddModalOpen(true); setAddModalTab('biodata'); }} className="flex items-center space-x-2 bg-[#5AB2FF] hover:bg-[#A0DEFF] text-white px-4 py-2 rounded-lg transition-colors shadow-md"><Plus size={18} /><span>Tambah</span></button>}
+            </div>
         </div>
       </div>
 
