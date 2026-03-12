@@ -621,6 +621,95 @@ const GraduatesView: React.FC<GraduatesViewProps> = ({ onShowNotification, isRea
           </div>
         </div>
       )}
+
+      {/* History Modal */}
+      {isHistoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+                  <FileSpreadsheet size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">History Nilai</h3>
+                  <p className="text-sm text-slate-500">{selectedGraduateName}</p>
+                </div>
+              </div>
+              <button onClick={handleCloseHistoryModal} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar">
+              {loadingHistory ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mb-4"></div>
+                  <p className="text-slate-500">Mengambil data history...</p>
+                </div>
+              ) : selectedGraduateHistory.length === 0 ? (
+                <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <FileSpreadsheet size={48} className="mx-auto text-slate-300 mb-3" />
+                  <p className="text-slate-600 font-medium">Tidak ada history nilai ditemukan.</p>
+                  <p className="text-sm text-slate-400 mt-1">History nilai hanya tersedia jika disimpan saat proses kelulusan.</p>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {selectedGraduateHistory.sort((a, b) => b.timestamp - a.timestamp).map((history, idx) => (
+                    <div key={idx} className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                      <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                        <div>
+                          <h4 className="font-bold text-slate-800">Tahun Ajaran: {history.academicYear}</h4>
+                          <p className="text-sm text-slate-500">Semester {history.semester} • Kelas {history.classId}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Tanggal Simpan</span>
+                          <p className="text-sm font-semibold text-slate-700">{new Date(history.timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                          <thead className="text-xs text-slate-500 uppercase bg-slate-50/50">
+                            <tr>
+                              <th className="px-6 py-3 font-semibold">Mata Pelajaran</th>
+                              <th className="px-6 py-3 text-center font-semibold">S1</th>
+                              <th className="px-6 py-3 text-center font-semibold">S2</th>
+                              <th className="px-6 py-3 text-center font-semibold">S3</th>
+                              <th className="px-6 py-3 text-center font-semibold">S4</th>
+                              <th className="px-6 py-3 text-center font-semibold text-emerald-600">SAS</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {Object.entries(history.subjects).map(([subjectId, grades]: [string, any]) => (
+                              <tr key={subjectId} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="px-6 py-3 font-medium text-slate-700">{subjectId}</td>
+                                <td className="px-6 py-3 text-center text-slate-600">{grades.sum1 || '-'}</td>
+                                <td className="px-6 py-3 text-center text-slate-600">{grades.sum2 || '-'}</td>
+                                <td className="px-6 py-3 text-center text-slate-600">{grades.sum3 || '-'}</td>
+                                <td className="px-6 py-3 text-center text-slate-600">{grades.sum4 || '-'}</td>
+                                <td className="px-6 py-3 text-center font-bold text-emerald-600 bg-emerald-50/30">{grades.sas || '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button
+                onClick={handleCloseHistoryModal}
+                className="px-6 py-2 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-colors font-medium shadow-md"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

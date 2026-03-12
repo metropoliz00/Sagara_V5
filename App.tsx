@@ -141,6 +141,7 @@ const AppContent: React.FC = () => {
     title?: string;
     message: string;
     onConfirm: () => void;
+    onCancel?: () => void;
   }>({
     isOpen: false,
     type: 'alert',
@@ -175,7 +176,7 @@ const AppContent: React.FC = () => {
     });
   };
 
-  const showConfirm = (message: string, onConfirmAction: () => void, title: string = 'Konfirmasi') => {
+  const showConfirm = (message: string, onConfirmAction: () => void, onCancelAction?: () => void, title: string = 'Konfirmasi') => {
     setModalConfig({
       isOpen: true,
       type: 'confirm',
@@ -184,7 +185,11 @@ const AppContent: React.FC = () => {
       onConfirm: () => {
         setModalConfig(prev => ({ ...prev, isOpen: false }));
         onConfirmAction();
-      }
+      },
+      onCancel: onCancelAction ? () => {
+        setModalConfig(prev => ({ ...prev, isOpen: false }));
+        onCancelAction();
+      } : undefined
     });
   };
 
@@ -743,14 +748,59 @@ const AppContent: React.FC = () => {
         }
       }
     } else { 
-      setSchoolProfile(data); 
-      if (!isDemoMode) {
-        try {
-          await apiService.saveProfile('school', data);
-          handleShowNotification('Profil sekolah berhasil disimpan!', 'success');
-        } catch (e) {
-          handleShowNotification('Gagal menyimpan profil sekolah.', 'error');
+      const semesterChanged = schoolProfile && schoolProfile.semester !== data.semester;
+      const yearChanged = schoolProfile && schoolProfile.year !== data.year;
+
+      const performUpdate = async () => {
+        setSchoolProfile(data); 
+        if (!isDemoMode) {
+          try {
+            await apiService.saveProfile('school', data);
+            handleShowNotification('Profil sekolah berhasil disimpan!', 'success');
+          } catch (e) {
+            handleShowNotification('Gagal menyimpan profil sekolah.', 'error');
+          }
         }
+      };
+
+      if ((semesterChanged || yearChanged) && schoolProfile) {
+        showConfirm(
+          `Anda mengubah ${semesterChanged && yearChanged ? 'Tahun Ajaran & Semester' : semesterChanged ? 'Semester' : 'Tahun Ajaran'}. Apakah Anda ingin mengarsipkan nilai saat ini ke History Nilai sebelum melanjutkan? (Nilai di semester baru akan dikosongkan)`, 
+          async () => {
+            try {
+              handleShowNotification('Sedang mengarsipkan nilai...', 'warning');
+              const studentsInClass = students.filter(s => s.classId === activeClassId);
+              
+              for (const student of studentsInClass) {
+                const currentGrades = await apiService.getGradesForStudent(student.id);
+                if (currentGrades && currentGrades.subjects && Object.keys(currentGrades.subjects).length > 0) {
+                  const historyEntry = {
+                    id: `${schoolProfile.year}-S${schoolProfile.semester}-${activeClassId}`,
+                    academicYear: schoolProfile.year,
+                    semester: schoolProfile.semester,
+                    classId: activeClassId,
+                    timestamp: Date.now(),
+                    subjects: currentGrades.subjects
+                  };
+                  await apiService.saveGradeHistory(student.id, historyEntry);
+                  await apiService.deleteGradesForStudent(student.id);
+                }
+              }
+              handleShowNotification('Nilai berhasil diarsipkan ke history.', 'success');
+              await performUpdate();
+            } catch (error) {
+              console.error("Error archiving grades:", error);
+              handleShowNotification('Gagal mengarsipkan nilai. Silakan coba lagi.', 'error');
+            }
+          },
+          () => {
+            // If user cancels archiving, just perform the update anyway? 
+            // Or maybe they just want to change the info without archiving.
+            performUpdate();
+          }
+        );
+      } else {
+        performUpdate();
       }
     } 
   };
@@ -1986,7 +2036,7 @@ const AppContent: React.FC = () => {
         title={modalConfig.title}
         message={modalConfig.message}
         onConfirm={modalConfig.onConfirm}
-        onCancel={() => setModalConfig(prev => ({...prev, isOpen: false}))}
+        onCancel={modalConfig.onCancel || (() => setModalConfig(prev => ({...prev, isOpen: false})))}
       />
     </div>
   );
