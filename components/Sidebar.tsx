@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
-  LayoutDashboard, Users, CalendarCheck, GraduationCap, School, LogOut, X, ChevronRight, 
+  LayoutDashboard, Users, CalendarCheck, GraduationCap, School, LogOut, X, ChevronRight, ChevronLeft,
   UserCog, HeartHandshake, Tent, BookText, Smile, Link2, FileText, Contact, BookOpen, 
   UserCheck, Database, NotebookPen, Files, Activity, Building, Wallet, Camera, Book
 } from 'lucide-react';
@@ -78,6 +78,7 @@ const menuGroups = [
 
 const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onClose, onLogout }) => {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     let activeGroup = '';
@@ -96,7 +97,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onC
   }, [currentView]);
 
   const toggleGroup = (title: string) => {
-      setOpenGroups(prev => ({ ...prev, [title]: !prev[title] }));
+      if (isCollapsed) {
+          setIsCollapsed(false);
+          setOpenGroups({ [title]: true });
+      } else {
+          setOpenGroups(prev => ({ ...prev, [title]: !prev[title] }));
+      }
   };
 
   const renderMenuItem = (item: { id: string, label: string, icon: any, roles: string[] }) => {
@@ -112,7 +118,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onC
         key={item.id}
         to={path}
         onClick={onClose}
-        className={({ isActive }) => `w-full flex items-center justify-between text-left px-4 py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden ${
+        title={isCollapsed ? item.label : undefined}
+        className={({ isActive }) => `w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} text-left ${isCollapsed ? 'px-2' : 'px-4'} py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden ${
           isActive 
             ? 'bg-gradient-to-r from-[#5AB2FF] to-[#A0DEFF] text-white shadow-lg shadow-[#5AB2FF]/30 translate-x-1' 
             : 'text-slate-500 hover:bg-[#FFF9D0]/50 hover:text-[#5AB2FF] hover:translate-x-1'
@@ -120,11 +127,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onC
       >
         {({ isActive }) => (
           <>
-            <div className="flex items-center space-x-3 relative z-10">
-              <Icon size={20} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-[#5AB2FF] transition-colors'} />
-              <span className={`font-medium ${isActive ? 'text-white' : 'text-slate-600 group-hover:text-[#5AB2FF]'}`}>{item.label}</span>
+            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} relative z-10 w-full`}>
+              <Icon size={20} className={`${isActive ? 'text-white' : 'text-slate-400 group-hover:text-[#5AB2FF] transition-colors'} ${isCollapsed ? 'mx-auto' : ''}`} />
+              {!isCollapsed && (
+                <span className={`font-medium whitespace-nowrap ${isActive ? 'text-white' : 'text-slate-600 group-hover:text-[#5AB2FF]'}`}>{item.label}</span>
+              )}
             </div>
-            {isActive && <ChevronRight size={16} className="text-[#CAF4FF] animate-pulse" />}
+            {isActive && !isCollapsed && <ChevronRight size={16} className="text-[#CAF4FF] animate-pulse shrink-0" />}
           </>
         )}
       </NavLink>
@@ -141,32 +150,42 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onC
       />
 
       {/* Sidebar Container */}
-      <div className={`fixed inset-y-0 left-0 z-30 w-72 bg-white border-r border-[#CAF4FF] text-slate-600 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto flex flex-col shadow-xl lg:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 left-0 z-30 ${isCollapsed ? 'w-20' : 'w-72'} bg-white border-r border-[#CAF4FF] text-slate-600 transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto flex flex-col shadow-xl lg:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
         {/* Header Logo */}
-        <div className="p-8 pb-4">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 flex items-center justify-center">
+        <div className={`p-8 pb-4 relative ${isCollapsed ? 'px-4' : ''}`}>
+          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} mb-8`}>
+            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
+              <div className="w-12 h-12 flex items-center justify-center shrink-0">
                 <img 
                   src="https://png.pngtree.com/png-clipart/20230928/original/pngtree-education-school-logo-design-kids-student-learning-vector-png-image_12898111.png" 
                   alt="Logo SAGARA" 
                   className="w-full h-full object-contain animate-float"
                 />
               </div>
-              <div className="flex flex-col">
-                <h1 className="text-xl font-extrabold tracking-tight text-slate-800 flex items-center">
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5AB2FF] to-[#A0DEFF]">SAGARA</span>
-                </h1>
-                <span className="text-xs font-medium text-slate-400 mt-0.5">
-                    UPT SD Negeri Remen 2
-                </span>
-              </div>
+              {!isCollapsed && (
+                <div className="flex flex-col overflow-hidden">
+                  <h1 className="text-xl font-extrabold tracking-tight text-slate-800 flex items-center">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5AB2FF] to-[#A0DEFF]">SAGARA</span>
+                  </h1>
+                  <span className="text-xs font-medium text-slate-400 mt-0.5 truncate">
+                      UPT SD Negeri Remen 2
+                  </span>
+                </div>
+              )}
             </div>
             <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-slate-600 transition-colors">
               <X size={24} />
             </button>
           </div>
+          
+          {/* Desktop Collapse Toggle */}
+          <button 
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="hidden lg:flex absolute top-10 -right-3 bg-white border border-[#CAF4FF] rounded-full p-1 text-slate-400 hover:text-[#5AB2FF] shadow-sm z-50 transition-colors"
+          >
+            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
         </div>
 
         {/* Navigation */}
@@ -188,10 +207,17 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onC
               <div key={group.title} className="py-1">
                 <button
                   onClick={() => toggleGroup(group.title)}
-                  className="w-full flex items-center justify-between px-4 py-2 text-left text-xs font-bold text-slate-400 uppercase tracking-wider rounded-lg hover:bg-gray-50 transition-colors"
+                  className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-4 py-2 text-left text-xs font-bold text-slate-400 uppercase tracking-wider rounded-lg hover:bg-gray-50 transition-colors`}
+                  title={isCollapsed ? group.title : undefined}
                 >
-                  <span>{group.title}</span>
-                  <ChevronRight size={14} className={`transform transition-transform duration-200 ${isGroupOpen ? 'rotate-90' : ''}`} />
+                  {isCollapsed ? (
+                    <span className="w-6 border-b-2 border-slate-200 rounded-full"></span>
+                  ) : (
+                    <>
+                      <span>{group.title}</span>
+                      <ChevronRight size={14} className={`transform transition-transform duration-200 ${isGroupOpen ? 'rotate-90' : ''}`} />
+                    </>
+                  )}
                 </button>
                 
                 <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isGroupOpen ? 'max-h-96' : 'max-h-0'}`}>
