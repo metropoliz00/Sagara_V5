@@ -39,7 +39,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ students, allAttend
             currentYear,
             semesterName: isSemester1 ? 'Ganjil' : 'Genap',
             startMonthName: new Date(currentYear, startMonth).toLocaleString('id-ID', { month: 'long' }),
-            currentMonthName: new Date(currentYear, endMonth).toLocaleString('id-ID', { month: 'long' })
+            currentMonthName: new Date(currentYear, currentMonth).toLocaleString('id-ID', { month: 'long' })
         };
     }, []);
 

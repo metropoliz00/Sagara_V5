@@ -360,7 +360,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
     return { 
         percentage, 
         counts, 
-        monthName: new Date(currentYear, endMonth).toLocaleString('id-ID', { month: 'long' }), 
+        monthName: new Date(currentYear, currentMonth).toLocaleString('id-ID', { month: 'long' }), 
         startMonthName: new Date(currentYear, startMonth).toLocaleString('id-ID', { month: 'long' }),
         semesterName: isSemester1 ? 'Ganjil' : 'Genap',
         year: currentYear,
