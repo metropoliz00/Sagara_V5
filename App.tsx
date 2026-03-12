@@ -1395,6 +1395,8 @@ const AppContent: React.FC = () => {
   const isStudentRole = currentUser.role === 'siswa';
   const isAdminRole = currentUser.role === 'admin';
   const isSupervisor = currentUser.role === 'supervisor';
+  
+  const canViewGraduates = isSupervisor || isAdminRole || (currentUser.role === 'guru' && (currentUser.position?.toLowerCase() || '').includes('kelas 6'));
 
   const myStudentData = isStudentRole 
     ? (students.find(s => String(s.id).trim() === String(currentUser.studentId).trim()) || null)
@@ -1655,7 +1657,7 @@ const AppContent: React.FC = () => {
                     />
                 } />
                 <Route path="/data-lulusan" element={
-                    isStudentRole ? <Navigate to="/" replace /> :
+                    !canViewGraduates ? <Navigate to="/" replace /> :
                     <GraduatesView 
                         onShowNotification={handleShowNotification}
                         isReadOnly={isGlobalReadOnly}

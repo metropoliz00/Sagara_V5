@@ -115,7 +115,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onC
 
   const renderMenuItem = (item: { id: string, label: string, icon: any, roles: string[] }) => {
     const Icon = item.icon;
-    const isVisible = currentUser && item.roles.includes(currentUser.role);
+    let isVisible = currentUser && item.roles.includes(currentUser.role);
+    
+    if (item.id === 'data-lulusan' && currentUser) {
+      if (currentUser.role === 'guru') {
+        const position = currentUser.position?.toLowerCase() || '';
+        if (!position.includes('kelas 6')) {
+          isVisible = false;
+        }
+      }
+    }
     
     if (!isVisible) return null;
 
