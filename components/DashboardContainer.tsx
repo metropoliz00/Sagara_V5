@@ -37,7 +37,6 @@ interface DashboardContainerProps {
   holidays: Holiday[];
   teacherProfile: TeacherProfileData;
   activeClassId: string;
-  onChangeView: (view: ViewState) => void;
   adminCompleteness: number;
   employmentLinks: EmploymentLink[];
   pendingPermissions: PermissionRequest[];
@@ -78,7 +77,6 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({
   holidays,
   teacherProfile,
   activeClassId,
-  onChangeView,
   adminCompleteness,
   employmentLinks,
   pendingPermissions,
@@ -152,7 +150,6 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({
       allAttendanceRecords={filteredAttendance} 
       teacherName={teacherProfile.name} 
       teachingClass={activeClassId}
-      onChangeView={onChangeView} 
       grades={grades}
       subjects={subjects}
       adminCompleteness={adminCompleteness}

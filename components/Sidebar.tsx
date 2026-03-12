@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, CalendarCheck, GraduationCap, School, LogOut, X, ChevronRight, 
   UserCog, HeartHandshake, Tent, BookText, Smile, Link2, FileText, Contact, BookOpen, 
@@ -9,7 +10,6 @@ import { ViewState, User } from '../types';
 interface SidebarProps {
   currentUser: User | null;
   currentView: ViewState;
-  onChangeView: (view: ViewState) => void;
   isOpen: boolean;
   onClose: () => void;
   onLogout: () => void;
@@ -76,7 +76,7 @@ const menuGroups = [
   }
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, onChangeView, isOpen, onClose, onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onClose, onLogout }) => {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -99,33 +99,35 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, onChangeVie
       setOpenGroups(prev => ({ ...prev, [title]: !prev[title] }));
   };
 
-  // Fungsi helper untuk merender satu item menu
   const renderMenuItem = (item: { id: string, label: string, icon: any, roles: string[] }) => {
     const Icon = item.icon;
-    const isActive = currentView === item.id;
     const isVisible = currentUser && item.roles.includes(currentUser.role);
     
     if (!isVisible) return null;
 
+    const path = item.id === 'dashboard' ? '/' : `/${item.id}`;
+
     return (
-      <button
+      <NavLink
         key={item.id}
-        onClick={() => {
-          onChangeView(item.id as ViewState);
-          onClose();
-        }}
-        className={`w-full flex items-center justify-between text-left px-4 py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden ${
+        to={path}
+        onClick={onClose}
+        className={({ isActive }) => `w-full flex items-center justify-between text-left px-4 py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden ${
           isActive 
             ? 'bg-gradient-to-r from-[#5AB2FF] to-[#A0DEFF] text-white shadow-lg shadow-[#5AB2FF]/30 translate-x-1' 
             : 'text-slate-500 hover:bg-[#FFF9D0]/50 hover:text-[#5AB2FF] hover:translate-x-1'
         }`}
       >
-        <div className="flex items-center space-x-3 relative z-10">
-          <Icon size={20} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-[#5AB2FF] transition-colors'} />
-          <span className={`font-medium ${isActive ? 'text-white' : 'text-slate-600 group-hover:text-[#5AB2FF]'}`}>{item.label}</span>
-        </div>
-        {isActive && <ChevronRight size={16} className="text-[#CAF4FF] animate-pulse" />}
-      </button>
+        {({ isActive }) => (
+          <>
+            <div className="flex items-center space-x-3 relative z-10">
+              <Icon size={20} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-[#5AB2FF] transition-colors'} />
+              <span className={`font-medium ${isActive ? 'text-white' : 'text-slate-600 group-hover:text-[#5AB2FF]'}`}>{item.label}</span>
+            </div>
+            {isActive && <ChevronRight size={16} className="text-[#CAF4FF] animate-pulse" />}
+          </>
+        )}
+      </NavLink>
     );
   };
 

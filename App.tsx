@@ -1,5 +1,6 @@
 // ... (imports remain the same)
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import DashboardContainer from './components/DashboardContainer';
 import StudentList from './components/StudentList';
@@ -35,6 +36,17 @@ import { cacheService } from './src/services/cacheService';
 import { Menu, Loader2, RefreshCw, AlertCircle, CheckCircle, WifiOff, ChevronDown, UserCog, LogOut, Filter, Bell, X, XCircle, Send } from 'lucide-react';
 
 const App: React.FC = () => {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
+};
+
+const AppContent: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   // -- STATE PERSISTENCE INIT --
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
       try {
@@ -43,9 +55,12 @@ const App: React.FC = () => {
       } catch (e) { return null; }
   });
 
-  const [currentView, setCurrentView] = useState<ViewState>(() => {
-      return (localStorage.getItem('sagara_view') as ViewState) || 'dashboard';
-  });
+  // currentView is now derived from location.pathname
+  const currentView = useMemo<ViewState>(() => {
+    const path = location.pathname.split('/')[1];
+    if (!path || path === '') return 'dashboard';
+    return path as ViewState;
+  }, [location.pathname]);
 
   // Effect to update document title based on current view
   useEffect(() => {
@@ -180,11 +195,6 @@ const App: React.FC = () => {
       }
   }, [currentUser]);
 
-  useEffect(() => {
-      if (currentUser) {
-          localStorage.setItem('sagara_view', currentView);
-      }
-  }, [currentView, currentUser]);
 
   const canSelectClass = useMemo(() => {
     if (!currentUser) return false;
@@ -203,9 +213,9 @@ const App: React.FC = () => {
 
   useEffect(() => {
       if (currentUser?.role === 'supervisor' && currentView === 'dashboard') {
-          setCurrentView('supervisor-overview');
+          navigate('/supervisor-overview');
       }
-  }, [currentUser, currentView]);
+  }, [currentUser, currentView, navigate]);
 
   const handleLogout = () => {
       setCurrentUser(null);
@@ -213,10 +223,9 @@ const App: React.FC = () => {
       setExtracurriculars([]);
       setAgendas([]);
       localStorage.removeItem('sagara_user');
-      localStorage.removeItem('sagara_view');
       localStorage.removeItem('sagara_classId');
       localStorage.removeItem('sagara_student_tab');
-      setCurrentView('dashboard');
+      navigate('/login');
   };
   
   const handleShowNotification = (message: string, type: 'success' | 'error' | 'warning') => {
@@ -276,7 +285,7 @@ const App: React.FC = () => {
                 setSelectedClassId(String(availableClasses[0]));
             }
         } else if (currentUser.role === 'siswa') {
-            setCurrentView('dashboard'); 
+            navigate('/'); 
             if (currentUser.classId) setSelectedClassId(String(currentUser.classId));
         } else {
             setSelectedClassId(String(currentUser.classId || ''));
@@ -510,7 +519,7 @@ const App: React.FC = () => {
       } catch (e) { console.error("Auto report error:", e); handleShowNotification('Jurnal disimpan, namun gagal membuat laporan otomatis.', 'warning'); }
   };
 
-  const handleNavigateToJournal = (date: string) => { setJournalTargetDate(date); setCurrentView('learning-journal'); };
+  const handleNavigateToJournal = (date: string) => { setJournalTargetDate(date); navigate('/learning-journal'); };
   
   const handleRestoreData = async (data: any) => {
       try {
@@ -1389,380 +1398,27 @@ const App: React.FC = () => {
     ? (students.find(s => String(s.id).trim() === String(currentUser.studentId).trim()) || null)
     : null;
 
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <div className="flex flex-col items-center justify-center h-full min-h-[80vh] text-gray-500 animate-fade-in overflow-hidden relative">
-           
-           <div className="relative w-24 h-24 flex items-center justify-center mb-6 animate-bounce">
-              <div className="absolute inset-0 bg-[#A0DEFF]/30 rounded-full blur-2xl opacity-60 animate-pulse"></div>
-              <img 
-                src="https://image2url.com/r2/default/images/1770790148258-99f209ea-fd45-44cf-9576-9c5205ef8b20.png" 
-                alt="Logo SAGARA" 
-                className="w-full h-full object-contain drop-shadow-xl"
-              />
-           </div>
-           <h2 className="text-xl font-bold text-slate-700 mb-2">Menyiapkan Data Kelas...</h2>
-           <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-[#5AB2FF] rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-              <div className="w-2 h-2 bg-[#5AB2FF] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-2 h-2 bg-[#5AB2FF] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-           </div>
-        </div>
-      );
-    }
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[80vh] text-gray-500 animate-fade-in overflow-hidden relative">
+         <div className="relative w-24 h-24 flex items-center justify-center mb-6 animate-bounce">
+            <div className="absolute inset-0 bg-[#A0DEFF]/30 rounded-full blur-2xl opacity-60 animate-pulse"></div>
+            <img 
+              src="https://image2url.com/r2/default/images/1770790148258-99f209ea-fd45-44cf-9576-9c5205ef8b20.png" 
+              alt="Logo SAGARA" 
+              className="w-full h-full object-contain drop-shadow-xl"
+            />
+         </div>
+         <h2 className="text-xl font-bold text-slate-700 mb-2">Menyiapkan Data Kelas...</h2>
+         <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-[#5AB2FF] rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+            <div className="w-2 h-2 bg-[#5AB2FF] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-2 h-2 bg-[#5AB2FF] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+         </div>
+      </div>
+    );
+  }
 
-    switch (currentView) {
-      case 'dashboard':
-        return <DashboardContainer
-            isStudentRole={isStudentRole}
-            isSupervisor={isSupervisor}
-            myStudentData={myStudentData}
-            allAttendanceRecords={allAttendanceRecords}
-            grades={grades}
-            liaisonLogs={liaisonLogs}
-            filteredCounseling={filteredCounseling}
-            permissionRequests={permissionRequests}
-            karakterAssessments={karakterAssessments}
-            onSavePermission={handleSavePermissionRequest}
-            onSaveLiaison={handleSaveLiaison}
-            onSaveKarakter={handleSaveKarakter}
-            onUpdateStudent={handleUpdateStudent}
-            students={students}
-            users={users}
-            extracurriculars={extracurriculars}
-            inventory={inventory}
-            schoolAssets={schoolAssets}
-            bosTransactions={bosTransactions}
-            filteredStudents={filteredStudents}
-            filteredAgendas={filteredAgendas}
-            filteredAttendance={filteredAttendance}
-            holidays={filteredHolidays}
-            teacherProfile={teacherProfile}
-            activeClassId={activeClassId}
-            onChangeView={setCurrentView}
-            adminCompleteness={adminPercentage}
-            employmentLinks={employmentLinks}
-            pendingPermissions={pendingPermissions}
-            onOpenPermissionModal={() => setIsPermissionModalOpen(true)}
-            schoolProfile={schoolProfile}
-            learningDocumentation={filteredLearningDocumentation}
-            learningReports={filteredReports}
-            hasNewMessages={hasNewMessages}
-            unreadMessageCount={unreadMessageCount}
-            bookLoans={bookLoans}
-            subjects={MOCK_SUBJECTS}
-            kktpMap={kktpMap}
-        />;
-      case 'learning-documentation':
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        return <LearningDocumentationView 
-          documentation={filteredLearningDocumentation}
-          onSave={handleSaveLearningDocumentation}
-          onDelete={handleDeleteLearningDocumentation}
-          onShowNotification={handleShowNotification}
-          classId={activeClassId}
-        />;
-      case 'supervisor-overview':
-        if (!isSupervisor && !isAdminRole) { setCurrentView('dashboard'); return null; }
-        return <SupervisorOverview
-                  students={students}
-                  users={users}
-                  attendanceRecords={allAttendanceRecords}
-                  grades={grades}
-                  liaisonLogs={liaisonLogs}
-                  permissionRequests={permissionRequests}
-                  counselingLogs={counselingLogs}
-                  extracurriculars={extracurriculars}
-                  inventory={inventory} 
-                  schoolAssets={schoolAssets}
-                  bosTransactions={bosTransactions}
-               />;
-      case 'school-assets':
-        if (!isAdminRole && !isSupervisor) { setCurrentView('dashboard'); return null; }
-        return <SchoolAssetsAdmin 
-                  assets={schoolAssets}
-                  onSave={handleSaveSchoolAsset}
-                  onDelete={handleDeleteSchoolAsset}
-               />;
-      case 'book-loan':
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        return <BookLoanView 
-                  students={filteredStudents}
-                  bookLoans={bookLoans}
-                  onSaveLoan={handleSaveBookLoan}
-                  onDeleteLoan={handleDeleteBookLoan}
-                  isDemoMode={isDemoMode}
-                  classId={activeClassId}
-                  onShowNotification={handleShowNotification}
-               />;
-      case 'bos-admin': // NEW CASE
-        if (!isAdminRole && !isSupervisor) { setCurrentView('dashboard'); return null; }
-        return <BOSManagement
-                  transactions={bosTransactions}
-                  onSave={handleSaveBOS}
-                  onDelete={handleDeleteBOS}
-                  schoolProfile={schoolProfile}
-                  isReadOnly={isSupervisor} // Supervisor Read Only
-               />;
-      case 'student-monitor':
-        if (!isAdminRole && !isSupervisor && currentUser.role !== 'guru') { setCurrentView('dashboard'); return null; }
-        return <StudentMonitor 
-                  students={filteredStudents}
-                  allAttendance={allAttendanceRecords}
-                  grades={filteredGrades}
-                  agendas={filteredAgendas}
-                  liaisonLogs={filteredLiaison}
-                  onSaveLiaison={handleSaveLiaison}
-                  onSavePermission={handleSavePermissionRequest}
-                  onUpdateLiaisonStatus={handleUpdateLiaisonStatus}
-                  classId={activeClassId}
-                  onUpdateStudent={handleUpdateStudent}
-               />;
-      case 'liaison-book': 
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        return <LiaisonBookView
-                  logs={filteredLiaison}
-                  students={students} 
-                  onReply={handleSaveLiaison}
-                  onUpdateStatus={handleUpdateLiaisonStatus}
-                  classId={activeClassId}
-               />;
-      case 'pendahuluan':
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        return <IntroductionView />;
-      case 'profile':
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        return <TeacherProfile 
-                  initialTeacher={teacherProfile} 
-                  initialSchool={schoolProfile} 
-                  onSave={handleUpdateProfile}
-                  onShowNotification={handleShowNotification}
-                  userRole={currentUser?.role}
-                />;
-      case 'students':
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        return <StudentList 
-          students={filteredStudents} 
-          teacherProfile={teacherProfile} 
-          schoolProfile={schoolProfile}
-          classId={activeClassId}
-          onAdd={handleAddStudent}
-          onBatchAdd={handleBatchAddStudents} 
-          onUpdate={handleUpdateStudent} 
-          onDelete={handleDeleteStudent} 
-          onShowNotification={handleShowNotification}
-          isReadOnly={isGlobalReadOnly} 
-        />;
-      case 'attendance':
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        return <AttendanceView 
-                  students={filteredStudents}
-                  allStudents={students}
-                  allAttendanceRecords={filteredAttendance}
-                  holidays={filteredHolidays}
-                  onRefreshData={fetchData}
-                  onAddHoliday={handleAddHoliday}
-                  onUpdateHoliday={handleUpdateHoliday}
-                  onDeleteHoliday={handleDeleteHoliday}
-                  isDemoMode={isDemoMode}
-                  onShowNotification={handleShowNotification}
-                  teacherProfile={teacherProfile}
-                  schoolProfile={schoolProfile}
-                  classId={activeClassId}
-                  isReadOnly={isGlobalReadOnly}
-                  userRole={currentUser?.role}
-                />;
-      case 'grades':
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        return <GradesView 
-                  students={filteredStudents} 
-                  initialGrades={filteredGrades} 
-                  onSave={handleSaveGrade} 
-                  onShowNotification={handleShowNotification} 
-                  classId={activeClassId}
-                  isReadOnly={isGlobalReadOnly}
-                  allowedSubjects={allowedSubjects}
-                  schoolProfile={schoolProfile}
-                  teacherProfile={teacherProfile}
-                />;
-      case 'attitude':
-          if (isStudentRole) { setCurrentView('dashboard'); return null; }
-          return <AttitudeView 
-                    students={filteredStudents}
-                    initialSikap={filteredSikap}
-                    initialKarakter={filteredKarakter}
-                    onSaveSikap={handleSaveSikap}
-                    onSaveKarakter={handleSaveKarakter}
-                    onShowNotification={handleShowNotification}
-                    classId={activeClassId}
-                    isReadOnly={isGlobalReadOnly}
-                  />;
-      case 'learning-reports': 
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        const allTeachers = users.filter(u => u.role === 'guru');
-        return <LearningReportsView 
-                  reports={learningReports}
-                  subjects={MOCK_SUBJECTS}
-                  onSave={handleSaveReport}
-                  onDelete={handleDeleteReport}
-                  classId={activeClassId}
-                  teachers={allTeachers}
-                  onNavigateToJournal={handleNavigateToJournal}
-               />;
-      case 'learning-journal':
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        return <LearningJournalView 
-                  classId={activeClassId}
-                  isReadOnly={isGlobalReadOnly}
-                  targetDate={journalTargetDate}
-                  onSaveBatch={handleSaveJournalAndAutoReport}
-                  schoolProfile={schoolProfile}
-                  teacherProfile={teacherProfile}
-                  currentUser={currentUser}
-               />;
-      case 'counseling':
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        return <CounselingView 
-          students={filteredStudents} 
-          logs={filteredCounseling} 
-          onCreateLog={handleCreateLog} 
-          onShowNotification={handleShowNotification} 
-          classId={activeClassId}
-        />;
-      case 'activities':
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        return (
-          <ActivitiesView 
-            students={filteredStudents} 
-            agendas={filteredAgendas}
-            extracurriculars={filteredExtracurriculars}
-            onAddAgenda={handleAddAgenda}
-            onToggleAgenda={handleToggleAgenda}
-            onDeleteAgenda={handleDeleteAgenda}
-            onUpdateExtracurricular={handleUpdateExtracurricular}
-            onAddExtracurricular={handleAddExtracurricular}
-            onShowNotification={handleShowNotification}
-            classId={activeClassId}
-          />
-        );
-      case 'admin':
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        return <ClassroomAdmin 
-                  students={filteredStudents} 
-                  teacherProfile={teacherProfile} 
-                  onShowNotification={handleShowNotification}
-                  holidays={filteredHolidays}
-                  onAddHoliday={handleAddHoliday}
-                  classId={activeClassId}
-                  userRole={currentUser.role}
-                  users={users}
-                  schoolProfile={schoolProfile}
-                />;
-      case 'support-docs':
-        if (isStudentRole) { setCurrentView('dashboard'); return null; }
-        return <SupportDocumentsView
-                  documents={filteredSupportDocuments}
-                  onSave={handleSaveSupportDocument}
-                  onDelete={handleDeleteSupportDocument}
-                  onShowNotification={handleShowNotification}
-                  classId={activeClassId}
-                  isReadOnly={isGlobalReadOnly}
-                />;
-      case 'employment-links': 
-        if (currentUser.role !== 'admin') {
-           setCurrentView('dashboard');
-           return null;
-        }
-        return <EmploymentLinksAdmin 
-                  links={employmentLinks}
-                  onSave={handleSaveEmploymentLink}
-                  onDelete={handleDeleteEmploymentLink}
-               />;
-      case 'accounts':
-        if (currentUser.role !== 'admin') {
-           setCurrentView('dashboard');
-           return null;
-        }
-        return <AccountManagement
-                  users={users}
-                  students={students}
-                  onAdd={handleAddUserAccount}
-                  onBatchAdd={handleBatchAddUserAccount}
-                  onUpdate={handleUpdateUserAccount}
-                  onDelete={handleDeleteUserAccount}
-                />;
-      case 'backup-restore':
-        if (currentUser.role !== 'admin') {
-           setCurrentView('dashboard');
-           return null;
-        }
-        const fullBackupData = {
-            users,
-            students,
-            agendas,
-            extracurriculars,
-            counselingLogs,
-            grades,
-            holidays,
-            allAttendanceRecords,
-            sikapAssessments,
-            karakterAssessments,
-            employmentLinks,
-            learningReports,
-            liaisonLogs,
-            permissionRequests,
-            schoolProfile,
-            schoolAssets,
-            bosTransactions // Include BOS
-        };
-        return <BackupRestore 
-                  data={fullBackupData} 
-                  onRestore={handleRestoreData} 
-               />;
-      default:
-        // Fallback to Dashboard Container
-        return <DashboardContainer
-            isStudentRole={isStudentRole}
-            isSupervisor={isSupervisor}
-            myStudentData={myStudentData}
-            allAttendanceRecords={allAttendanceRecords}
-            grades={grades}
-            liaisonLogs={liaisonLogs}
-            filteredCounseling={filteredCounseling}
-            permissionRequests={permissionRequests}
-            karakterAssessments={karakterAssessments}
-            onSavePermission={handleSavePermissionRequest}
-            onSaveLiaison={handleSaveLiaison}
-            onSaveKarakter={handleSaveKarakter}
-            onUpdateStudent={handleUpdateStudent}
-            students={students}
-            users={users}
-            extracurriculars={extracurriculars}
-            inventory={inventory}
-            schoolAssets={schoolAssets}
-            bosTransactions={bosTransactions}
-            filteredStudents={filteredStudents}
-            filteredAgendas={filteredAgendas}
-            filteredAttendance={filteredAttendance}
-            holidays={filteredHolidays}
-            teacherProfile={teacherProfile}
-            activeClassId={activeClassId}
-            onChangeView={setCurrentView}
-            adminCompleteness={adminPercentage}
-            employmentLinks={employmentLinks}
-            pendingPermissions={pendingPermissions}
-            onOpenPermissionModal={() => setIsPermissionModalOpen(true)}
-            schoolProfile={schoolProfile}
-            learningDocumentation={filteredLearningDocumentation}
-            hasNewMessages={hasNewMessages}
-            unreadMessageCount={unreadMessageCount}
-            bookLoans={bookLoans}
-            subjects={MOCK_SUBJECTS}
-            kktpMap={kktpMap}
-        />;
-    }
-  };
 
   return (
     <div className="flex h-screen bg-white overflow-hidden font-sans text-slate-800">
@@ -1770,7 +1426,6 @@ const App: React.FC = () => {
         <Sidebar 
           currentUser={currentUser}
           currentView={currentView} 
-          onChangeView={setCurrentView} 
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
           onLogout={handleLogout}
@@ -1829,7 +1484,7 @@ const App: React.FC = () => {
                  <div className="flex items-center space-x-2">
                      {/* Liaison Notification Paper Plane */}
                      <button 
-                        onClick={() => setCurrentView('liaison-book')}
+                        onClick={() => navigate('/liaison-book')}
                         className={`p-2 rounded-full transition-all relative ${
                             unreadLiaisonCount > 0 
                             ? 'text-purple-500 bg-purple-50 animate-vibrate' 
@@ -1892,7 +1547,7 @@ const App: React.FC = () => {
                         <div className="p-2">
                             {!isStudentRole && (
                                 <button 
-                                    onClick={() => { setCurrentView('profile'); setIsProfileDropdownOpen(false); }}
+                                    onClick={() => { navigate('/profile'); setIsProfileDropdownOpen(false); }}
                                     className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-[#CAF4FF]/50"
                                 >
                                     <UserCog size={16} />
@@ -1938,7 +1593,314 @@ const App: React.FC = () => {
                 </div>
              )}
              
-             {renderContent()}
+             <Routes>
+                <Route path="/" element={
+                    <DashboardContainer
+                        isStudentRole={isStudentRole}
+                        isSupervisor={isSupervisor}
+                        myStudentData={myStudentData}
+                        allAttendanceRecords={allAttendanceRecords}
+                        grades={grades}
+                        liaisonLogs={liaisonLogs}
+                        filteredCounseling={filteredCounseling}
+                        permissionRequests={permissionRequests}
+                        karakterAssessments={karakterAssessments}
+                        onSavePermission={handleSavePermissionRequest}
+                        onSaveLiaison={handleSaveLiaison}
+                        onSaveKarakter={handleSaveKarakter}
+                        onUpdateStudent={handleUpdateStudent}
+                        students={students}
+                        users={users}
+                        extracurriculars={extracurriculars}
+                        inventory={inventory}
+                        schoolAssets={schoolAssets}
+                        bosTransactions={bosTransactions}
+                        filteredStudents={filteredStudents}
+                        filteredAgendas={filteredAgendas}
+                        filteredAttendance={filteredAttendance}
+                        holidays={filteredHolidays}
+                        teacherProfile={teacherProfile}
+                        activeClassId={activeClassId}
+                        adminCompleteness={adminPercentage}
+                        employmentLinks={employmentLinks}
+                        pendingPermissions={pendingPermissions}
+                        onOpenPermissionModal={() => setIsPermissionModalOpen(true)}
+                        schoolProfile={schoolProfile}
+                        learningDocumentation={filteredLearningDocumentation}
+                        learningReports={filteredReports}
+                        hasNewMessages={hasNewMessages}
+                        unreadMessageCount={unreadMessageCount}
+                        bookLoans={bookLoans}
+                        subjects={MOCK_SUBJECTS}
+                        kktpMap={kktpMap}
+                    />
+                } />
+                <Route path="/dashboard" element={<Navigate to="/" replace />} />
+                <Route path="/students" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <StudentList 
+                        students={filteredStudents} 
+                        teacherProfile={teacherProfile} 
+                        schoolProfile={schoolProfile}
+                        classId={activeClassId}
+                        onAdd={handleAddStudent}
+                        onBatchAdd={handleBatchAddStudents} 
+                        onUpdate={handleUpdateStudent} 
+                        onDelete={handleDeleteStudent} 
+                        onShowNotification={handleShowNotification}
+                        isReadOnly={isGlobalReadOnly} 
+                    />
+                } />
+                <Route path="/attendance" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <AttendanceView 
+                        students={filteredStudents}
+                        allStudents={students}
+                        allAttendanceRecords={filteredAttendance}
+                        holidays={filteredHolidays}
+                        onRefreshData={fetchData}
+                        onAddHoliday={handleAddHoliday}
+                        onUpdateHoliday={handleUpdateHoliday}
+                        onDeleteHoliday={handleDeleteHoliday}
+                        isDemoMode={isDemoMode}
+                        onShowNotification={handleShowNotification}
+                        teacherProfile={teacherProfile}
+                        schoolProfile={schoolProfile}
+                        classId={activeClassId}
+                        isReadOnly={isGlobalReadOnly}
+                        userRole={currentUser?.role}
+                    />
+                } />
+                <Route path="/grades" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <GradesView 
+                        students={filteredStudents} 
+                        initialGrades={filteredGrades} 
+                        onSave={handleSaveGrade} 
+                        onShowNotification={handleShowNotification} 
+                        classId={activeClassId}
+                        isReadOnly={isGlobalReadOnly}
+                        allowedSubjects={allowedSubjects}
+                        schoolProfile={schoolProfile}
+                        teacherProfile={teacherProfile}
+                    />
+                } />
+                <Route path="/attitude" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <AttitudeView 
+                        students={filteredStudents}
+                        initialSikap={filteredSikap}
+                        initialKarakter={filteredKarakter}
+                        onSaveSikap={handleSaveSikap}
+                        onSaveKarakter={handleSaveKarakter}
+                        onShowNotification={handleShowNotification}
+                        classId={activeClassId}
+                        isReadOnly={isGlobalReadOnly}
+                    />
+                } />
+                <Route path="/learning-journal" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <LearningJournalView 
+                        classId={activeClassId}
+                        isReadOnly={isGlobalReadOnly}
+                        targetDate={journalTargetDate}
+                        onSaveBatch={handleSaveJournalAndAutoReport}
+                        schoolProfile={schoolProfile}
+                        teacherProfile={teacherProfile}
+                        currentUser={currentUser}
+                    />
+                } />
+                <Route path="/learning-reports" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <LearningReportsView 
+                        reports={learningReports}
+                        subjects={MOCK_SUBJECTS}
+                        onSave={handleSaveReport}
+                        onDelete={handleDeleteReport}
+                        classId={activeClassId}
+                        teachers={users.filter(u => u.role === 'guru')}
+                        onNavigateToJournal={handleNavigateToJournal}
+                    />
+                } />
+                <Route path="/learning-documentation" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <LearningDocumentationView 
+                        documentation={filteredLearningDocumentation}
+                        onSave={handleSaveLearningDocumentation}
+                        onDelete={handleDeleteLearningDocumentation}
+                        onShowNotification={handleShowNotification}
+                        classId={activeClassId}
+                    />
+                } />
+                <Route path="/student-monitor" element={
+                    (!isAdminRole && !isSupervisor && currentUser.role !== 'guru') ? <Navigate to="/" replace /> :
+                    <StudentMonitor 
+                        students={filteredStudents}
+                        allAttendance={allAttendanceRecords}
+                        grades={filteredGrades}
+                        agendas={filteredAgendas}
+                        liaisonLogs={filteredLiaison}
+                        onSaveLiaison={handleSaveLiaison}
+                        onSavePermission={handleSavePermissionRequest}
+                        onUpdateLiaisonStatus={handleUpdateLiaisonStatus}
+                        classId={activeClassId}
+                        onUpdateStudent={handleUpdateStudent}
+                    />
+                } />
+                <Route path="/counseling" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <CounselingView 
+                        students={filteredStudents} 
+                        logs={filteredCounseling} 
+                        onCreateLog={handleCreateLog} 
+                        onShowNotification={handleShowNotification} 
+                        classId={activeClassId}
+                    />
+                } />
+                <Route path="/activities" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <ActivitiesView 
+                        students={filteredStudents} 
+                        agendas={filteredAgendas}
+                        extracurriculars={filteredExtracurriculars}
+                        onAddAgenda={handleAddAgenda}
+                        onToggleAgenda={handleToggleAgenda}
+                        onDeleteAgenda={handleDeleteAgenda}
+                        onUpdateExtracurricular={handleUpdateExtracurricular}
+                        onAddExtracurricular={handleAddExtracurricular}
+                        onShowNotification={handleShowNotification}
+                        classId={activeClassId}
+                    />
+                } />
+                <Route path="/liaison-book" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <LiaisonBookView
+                        logs={filteredLiaison}
+                        students={students} 
+                        onReply={handleSaveLiaison}
+                        onUpdateStatus={handleUpdateLiaisonStatus}
+                        classId={activeClassId}
+                    />
+                } />
+                <Route path="/admin" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <ClassroomAdmin 
+                        students={filteredStudents} 
+                        teacherProfile={teacherProfile} 
+                        onShowNotification={handleShowNotification}
+                        holidays={filteredHolidays}
+                        onAddHoliday={handleAddHoliday}
+                        classId={activeClassId}
+                        userRole={currentUser.role}
+                        users={users}
+                        schoolProfile={schoolProfile}
+                    />
+                } />
+                <Route path="/book-loan" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <BookLoanView 
+                        students={filteredStudents}
+                        bookLoans={bookLoans}
+                        onSaveLoan={handleSaveBookLoan}
+                        onDeleteLoan={handleDeleteBookLoan}
+                        isDemoMode={isDemoMode}
+                        classId={activeClassId}
+                        onShowNotification={handleShowNotification}
+                    />
+                } />
+                <Route path="/school-assets" element={
+                    (!isAdminRole && !isSupervisor) ? <Navigate to="/" replace /> :
+                    <SchoolAssetsAdmin 
+                        assets={schoolAssets}
+                        onSave={handleSaveSchoolAsset}
+                        onDelete={handleDeleteSchoolAsset}
+                    />
+                } />
+                <Route path="/bos-admin" element={
+                    (!isAdminRole && !isSupervisor) ? <Navigate to="/" replace /> :
+                    <BOSManagement
+                        transactions={bosTransactions}
+                        onSave={handleSaveBOS}
+                        onDelete={handleDeleteBOS}
+                        schoolProfile={schoolProfile}
+                        isReadOnly={isSupervisor}
+                    />
+                } />
+                <Route path="/support-docs" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <SupportDocumentsView
+                        documents={filteredSupportDocuments}
+                        onSave={handleSaveSupportDocument}
+                        onDelete={handleDeleteSupportDocument}
+                        onShowNotification={handleShowNotification}
+                        classId={activeClassId}
+                        isReadOnly={isGlobalReadOnly}
+                    />
+                } />
+                <Route path="/profile" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <TeacherProfile 
+                        initialTeacher={teacherProfile} 
+                        initialSchool={schoolProfile} 
+                        onSave={handleUpdateProfile}
+                        onShowNotification={handleShowNotification}
+                        userRole={currentUser?.role}
+                    />
+                } />
+                <Route path="/accounts" element={
+                    currentUser.role !== 'admin' ? <Navigate to="/" replace /> :
+                    <AccountManagement
+                        users={users}
+                        students={students}
+                        onAdd={handleAddUserAccount}
+                        onBatchAdd={handleBatchAddUserAccount}
+                        onUpdate={handleUpdateUserAccount}
+                        onDelete={handleDeleteUserAccount}
+                    />
+                } />
+                <Route path="/employment-links" element={
+                    currentUser.role !== 'admin' ? <Navigate to="/" replace /> :
+                    <EmploymentLinksAdmin 
+                        links={employmentLinks}
+                        onSave={handleSaveEmploymentLink}
+                        onDelete={handleDeleteEmploymentLink}
+                    />
+                } />
+                <Route path="/backup-restore" element={
+                    currentUser.role !== 'admin' ? <Navigate to="/" replace /> :
+                    <BackupRestore 
+                        data={{
+                            users, students, agendas, extracurriculars, counselingLogs,
+                            grades, holidays, allAttendanceRecords, sikapAssessments,
+                            karakterAssessments, employmentLinks, learningReports,
+                            liaisonLogs, permissionRequests, schoolProfile, schoolAssets,
+                            bosTransactions
+                        }} 
+                        onRestore={handleRestoreData} 
+                    />
+                } />
+                <Route path="/supervisor-overview" element={
+                    (!isSupervisor && !isAdminRole) ? <Navigate to="/" replace /> :
+                    <SupervisorOverview
+                        students={students}
+                        users={users}
+                        attendanceRecords={allAttendanceRecords}
+                        grades={grades}
+                        liaisonLogs={liaisonLogs}
+                        permissionRequests={permissionRequests}
+                        counselingLogs={counselingLogs}
+                        extracurriculars={extracurriculars}
+                        inventory={inventory} 
+                        schoolAssets={schoolAssets}
+                        bosTransactions={bosTransactions}
+                    />
+                } />
+                <Route path="/pendahuluan/*" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <IntroductionView />
+                } />
+                <Route path="*" element={<Navigate to="/" replace />} />
+             </Routes>
            </div>
         </main>
       </div>

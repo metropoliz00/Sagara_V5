@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/apiService';
 import { User, Lock, Loader2, ArrowRight, Sparkles, Eye, EyeOff, Code, X } from 'lucide-react';
 import { User as UserType, SchoolProfileData } from '../types';
@@ -14,6 +15,7 @@ interface LoginProps {
 const GOOGLE_CLIENT_ID = "188596791323-rf3gor7ompi1hn7086vp38rkths652te.apps.googleusercontent.com" as string; 
 
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -67,6 +69,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           const user = await apiService.loginWithGoogle(email);
           if (user) {
               onLoginSuccess(user);
+              navigate('/');
           } else {
               setError("Email Google tidak terdaftar di sistem.");
           }
@@ -133,6 +136,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           };
           onLoginSuccess(demoUser);
           setLoading(false);
+          navigate('/');
       }, 1000);
   };
 
@@ -150,6 +154,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       const user = await apiService.login(username, password);
       if (user) {
         onLoginSuccess(user);
+        navigate('/');
       } else {
         setError('Username atau Password tidak valid.');
       }

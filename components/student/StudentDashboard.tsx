@@ -1,5 +1,6 @@
 
 import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Student, SchoolProfileData, TeacherProfileData, ViewState } from '../../types';
 import { BarChart2, Calendar, Users, Briefcase, GraduationCap, Heart, Sparkles, DollarSign, Trophy, AlertTriangle, Bell } from 'lucide-react';
 import {
@@ -13,14 +14,14 @@ interface StudentDashboardProps {
     teacherProfile?: TeacherProfileData;
     hasNewMessages?: boolean;
     unreadMessageCount?: number;
-    onChangeView?: (view: ViewState) => void;
 }
 
 const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#64748b'];
 const POSITIVE_COLOR = '#10b981'; // green
 const NEGATIVE_COLOR = '#ef4444'; // red
 
-const StudentDashboard: React.FC<StudentDashboardProps> = ({ students, schoolProfile, teacherProfile, hasNewMessages = false, unreadMessageCount = 0, onChangeView }) => {
+const StudentDashboard: React.FC<StudentDashboardProps> = ({ students, schoolProfile, teacherProfile, hasNewMessages = false, unreadMessageCount = 0 }) => {
+    const navigate = useNavigate();
 
     const calculateAge = (birthDate: string): number => {
         if (!birthDate) return 0;
@@ -163,9 +164,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ students, schoolPro
         <div className="animate-fade-in space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-800">Dashboard Siswa</h2>
-                {onChangeView && (
                 <button 
-                    onClick={() => onChangeView('liaison-book')}
+                    onClick={() => navigate('/liaison-book')}
                     className={`relative bg-white p-2.5 rounded-xl shadow-sm border border-gray-100 transition-all ${
                         hasNewMessages 
                         ? 'text-indigo-600 border-indigo-200 bg-indigo-50 animate-vibrate' 
@@ -180,7 +180,6 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ students, schoolPro
                         </div>
                     )}
                 </button>
-                )}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 no-print-report">
                 <div className="bg-white p-4 rounded-lg shadow-sm border col-span-1 lg:col-span-2">
