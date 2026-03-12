@@ -53,6 +53,7 @@ const StudentList: React.FC<StudentListProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [historyViewMode, setHistoryViewMode] = useState<'list' | 'rekap'>('list');
   const [historyFormData, setHistoryFormData] = useState({
     academicYear: '',
     semester: '1',
@@ -60,6 +61,7 @@ const StudentList: React.FC<StudentListProps> = ({
     subjects: {} as Record<string, any>
   });
   const historyFileInputRef = useRef<HTMLInputElement>(null);
+  const rekapFileInputRef = useRef<HTMLInputElement>(null);
   const bulkHistoryFileInputRef = useRef<HTMLInputElement>(null);
 
   // Helper completeness functions
@@ -434,6 +436,42 @@ const StudentList: React.FC<StudentListProps> = ({
   const [detailTempViolations, setDetailTempViolations] = useState('');
   const [gradeHistory, setGradeHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const rekapData = useMemo(() => {
+    if (!gradeHistory || gradeHistory.length === 0) return null;
+
+    // 1. Get all unique periods and sort them
+    const periodsMap = new Map();
+    gradeHistory.forEach(h => {
+      const id = `${h.academicYear}-${h.semester}`;
+      if (!periodsMap.has(id)) {
+        periodsMap.set(id, {
+          id,
+          label: `${h.academicYear} Smt ${h.semester}`,
+          year: h.academicYear,
+          semester: h.semester,
+          classId: h.classId
+        });
+      }
+    });
+
+    const periods = Array.from(periodsMap.values()).sort((a, b) => {
+      if (a.year !== b.year) return a.year.localeCompare(b.year);
+      return a.semester.localeCompare(b.semester);
+    });
+
+    // 2. Get all unique subjects
+    const subjectsSet = new Set<string>();
+    gradeHistory.forEach(h => {
+      Object.keys(h.subjects).forEach(s => subjectsSet.add(s));
+    });
+
+    return {
+      periods,
+      subjects: Array.from(subjectsSet).sort(),
+      history: gradeHistory
+    };
+  }, [gradeHistory]);
 
   useEffect(() => {
     if (selectedStudent) {
@@ -829,8 +867,111 @@ const StudentList: React.FC<StudentListProps> = ({
     if (bulkHistoryFileInputRef.current) bulkHistoryFileInputRef.current.value = '';
   };
 
+  const handleImportRekapExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedStudent) return;
+
+    onShowNotification("Memproses file rekap...", "warning");
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const workbook = XLSX.read(bstr, { type: 'binary' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const data = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        if (data.length === 0) {
+          onShowNotification("File Excel kosong.", "warning");
+          return;
+        }
+
+        const historyEntries: Record<string, any> = {};
+
+        data.forEach(row => {
+          const subjectName = row['Mata Pelajaran'] || row['Subject'];
+          if (!subjectName) return;
+
+          Object.keys(row).forEach(key => {
+            if (key === 'Mata Pelajaran' || key === 'Subject') return;
+
+            // Try to parse "2023/2024 Smt 1" or similar
+            const match = key.match(/(\d{4}\/\d{4})\s+Smt\s+(\d)/i);
+            if (match) {
+              const academicYear = match[1];
+              const semester = match[2];
+              const periodKey = `${academicYear}-${semester}`;
+
+              if (!historyEntries[periodKey]) {
+                historyEntries[periodKey] = {
+                  id: `${academicYear}-S${semester}-${selectedStudent.classId}-${Date.now()}`,
+                  academicYear,
+                  semester,
+                  classId: selectedStudent.classId,
+                  timestamp: Date.now(),
+                  subjects: {}
+                };
+              }
+
+              historyEntries[periodKey].subjects[subjectName] = {
+                sum1: '', sum2: '', sum3: '', sum4: '',
+                sas: row[key] || ''
+              };
+            }
+          });
+        });
+
+        const entries = Object.values(historyEntries);
+        if (entries.length === 0) {
+          onShowNotification("Tidak ada data rekap valid ditemukan. Pastikan header kolom menggunakan format 'Tahun Smt' (Contoh: 2023/2024 Smt 1)", "warning");
+          return;
+        }
+
+        let successCount = 0;
+        for (const entry of entries) {
+          try {
+            await apiService.saveGradeHistory(selectedStudent.id, entry);
+            successCount++;
+          } catch (err) {
+            console.error("Error saving rekap entry:", err);
+          }
+        }
+
+        onShowNotification(`Berhasil mengimpor ${successCount} semester rekap nilai.`, "success");
+        const history = await apiService.getGradeHistory(selectedStudent.id);
+        setGradeHistory(history);
+      } catch (error) {
+        console.error("Error importing rekap excel:", error);
+        onShowNotification("Gagal memproses file rekap.", "error");
+      }
+    };
+    reader.readAsBinaryString(file);
+    if (rekapFileInputRef.current) rekapFileInputRef.current.value = '';
+  };
+
+  const handleDownloadRekapTemplate = () => {
+    if (!selectedStudent) return;
+
+    const periods = [
+      '2021/2022 Smt 1', '2021/2022 Smt 2',
+      '2022/2023 Smt 1', '2022/2023 Smt 2',
+      '2023/2024 Smt 1', '2023/2024 Smt 2'
+    ];
+
+    const templateData = MOCK_SUBJECTS.map(sub => {
+      const row: any = { 'Mata Pelajaran': sub.name };
+      periods.forEach(p => { row[p] = ''; });
+      return row;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template Rekap");
+    XLSX.writeFile(wb, `Template_Rekap_Nilai_${selectedStudent.name.replace(/\s+/g, '_')}.xlsx`);
+  };
+
   const handleDownloadBulkHistoryTemplate = () => {
-    const templateData = students.slice(0, 5).flatMap(s => 
+    const templateData = students.flatMap(s => 
       MOCK_SUBJECTS.map(sub => ({
         'NIS': s.nis,
         'Nama': s.name,
@@ -983,36 +1124,78 @@ const StudentList: React.FC<StudentListProps> = ({
                 <div className={activeTab === 'economy' ? '' : 'hidden print:block'}><EconomyTab student={selectedStudent} onChange={handleChange} /></div>
                 <div className={activeTab === 'records' ? '' : 'hidden print:block'}><RecordsTab student={selectedStudent} tempAchievements={detailTempAchievements} setTempAchievements={setDetailTempAchievements} tempViolations={detailTempViolations} setTempViolations={setDetailTempViolations}/></div>
                 <div className={activeTab === 'history' ? '' : 'hidden print:block'}>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-gray-800 flex items-center">
-                      <FileSpreadsheet className="mr-2 text-[#5AB2FF]" size={20} /> History Nilai
-                    </h3>
-                    {!isReadOnly && (
-                      <div className="flex space-x-2 no-print">
-                        <input type="file" ref={historyFileInputRef} onChange={handleImportHistoryExcel} className="hidden" accept=".xlsx, .xls" />
-                        <button 
-                          onClick={handleDownloadHistoryTemplate}
-                          className="text-xs flex items-center space-x-1 bg-white border border-gray-200 text-gray-600 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                          title="Download Template Excel"
-                        >
-                          <FileSpreadsheet size={14} /> <span>Template</span>
-                        </button>
-                        <button 
-                          onClick={() => historyFileInputRef.current?.click()}
-                          className="text-xs flex items-center space-x-1 bg-white border border-gray-200 text-gray-600 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                          title="Import dari Excel"
-                        >
-                          <Upload size={14} /> <span>Import</span>
-                        </button>
-                        <button 
-                          onClick={handleAddManualHistory}
-                          className="text-xs flex items-center space-x-1 bg-[#5AB2FF] text-white px-3 py-1.5 rounded-lg hover:bg-[#A0DEFF] transition-colors shadow-sm"
-                        >
-                          <Plus size={14} /> <span>Tambah Manual</span>
-                        </button>
-                      </div>
-                    )}
+                  <div className="flex flex-col space-y-4 mb-6">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                        <FileSpreadsheet className="mr-2 text-[#5AB2FF]" size={20} /> History Nilai
+                      </h3>
+                      {!isReadOnly && (
+                        <div className="flex space-x-2 no-print">
+                          <input type="file" ref={historyFileInputRef} onChange={handleImportHistoryExcel} className="hidden" accept=".xlsx, .xls" />
+                          <input type="file" ref={rekapFileInputRef} onChange={handleImportRekapExcel} className="hidden" accept=".xlsx, .xls" />
+                          
+                          {historyViewMode === 'list' ? (
+                            <>
+                              <button 
+                                onClick={handleDownloadHistoryTemplate}
+                                className="text-xs flex items-center space-x-1 bg-white border border-gray-200 text-gray-600 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                                title="Download Template Excel"
+                              >
+                                <Download size={14} /> <span>Template</span>
+                              </button>
+                              <button 
+                                onClick={() => historyFileInputRef.current?.click()}
+                                className="text-xs flex items-center space-x-1 bg-white border border-gray-200 text-gray-600 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                                title="Import dari Excel"
+                              >
+                                <Upload size={14} /> <span>Import</span>
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button 
+                                onClick={handleDownloadRekapTemplate}
+                                className="text-xs flex items-center space-x-1 bg-white border border-gray-200 text-gray-600 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                                title="Download Template Rekap"
+                              >
+                                <Download size={14} /> <span>Template Rekap</span>
+                              </button>
+                              <button 
+                                onClick={() => rekapFileInputRef.current?.click()}
+                                className="text-xs flex items-center space-x-1 bg-white border border-gray-200 text-gray-600 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                                title="Import Rekap dari Excel"
+                              >
+                                <Upload size={14} /> <span>Import Rekap</span>
+                              </button>
+                            </>
+                          )}
+                          
+                          <button 
+                            onClick={handleAddManualHistory}
+                            className="text-xs flex items-center space-x-1 bg-[#5AB2FF] text-white px-3 py-1.5 rounded-lg hover:bg-[#A0DEFF] transition-colors shadow-sm"
+                          >
+                            <Plus size={14} /> <span>Tambah Manual</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-2 bg-gray-100 p-1 rounded-lg self-start no-print">
+                      <button 
+                        onClick={() => setHistoryViewMode('list')}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${historyViewMode === 'list' ? 'bg-white text-[#5AB2FF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                      >
+                        List History
+                      </button>
+                      <button 
+                        onClick={() => setHistoryViewMode('rekap')}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${historyViewMode === 'rekap' ? 'bg-white text-[#5AB2FF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                      >
+                        Rekap Raport
+                      </button>
+                    </div>
                   </div>
+
                   {loadingHistory ? (
                     <div className="flex justify-center items-center h-32">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5AB2FF]"></div>
@@ -1023,7 +1206,7 @@ const StudentList: React.FC<StudentListProps> = ({
                       <p>Belum ada history nilai untuk siswa ini.</p>
                       <p className="text-sm mt-1">History nilai akan tersimpan otomatis saat siswa naik kelas atau lulus.</p>
                     </div>
-                  ) : (
+                  ) : historyViewMode === 'list' ? (
                     <div className="space-y-6">
                       {gradeHistory.sort((a, b) => b.timestamp - a.timestamp).map((history, index) => (
                         <div key={index} className="border border-gray-200 rounded-xl overflow-hidden">
@@ -1064,6 +1247,50 @@ const StudentList: React.FC<StudentListProps> = ({
                           </div>
                         </div>
                       ))}
+                    </div>
+                  ) : (
+                    <div className="border border-gray-200 rounded-xl overflow-hidden">
+                      <div className="bg-[#CAF4FF]/30 px-4 py-3 border-b border-gray-200">
+                        <h4 className="font-bold text-gray-800">Rekap Nilai Raport (SAS)</h4>
+                        <p className="text-xs text-gray-500">Kumpulan nilai akhir semester dari seluruh history.</p>
+                      </div>
+                      <div className="p-0 overflow-x-auto">
+                        <table className="w-full text-sm text-left border-collapse">
+                          <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 border-b border-r sticky left-0 bg-gray-50 z-10 min-w-[150px]">Mata Pelajaran</th>
+                              {rekapData?.periods.map(period => (
+                                <th key={period.id} className="px-4 py-3 border-b text-center min-w-[120px]">
+                                  <div className="font-bold">{period.year}</div>
+                                  <div className="text-[10px] text-gray-500">Smt {period.semester} • Klp {period.classId}</div>
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rekapData?.subjects.map(subject => (
+                              <tr key={subject} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-4 py-3 border-b border-r font-medium text-gray-900 sticky left-0 bg-white z-10">{subject}</td>
+                                {rekapData.periods.map(period => {
+                                  const historyEntry = rekapData.history.find(h => h.academicYear === period.year && h.semester === period.semester);
+                                  const grade = historyEntry?.subjects[subject]?.sas;
+                                  return (
+                                    <td key={period.id} className="px-4 py-3 border-b text-center">
+                                      {grade ? (
+                                        <span className={`font-bold ${Number(grade) >= 75 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                          {grade}
+                                        </span>
+                                      ) : (
+                                        <span className="text-gray-300">-</span>
+                                      )}
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </div>
