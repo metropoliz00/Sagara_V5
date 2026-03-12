@@ -165,7 +165,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ students, schoolPro
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-800">Dashboard Siswa</h2>
                 <button 
-                    onClick={() => navigate('/liaison-book')}
+                    onClick={() => navigate('/buku-penghubung')}
                     className={`relative bg-white p-2.5 rounded-xl shadow-sm border border-gray-100 transition-all ${
                         hasNewMessages 
                         ? 'text-indigo-600 border-indigo-200 bg-indigo-50 animate-vibrate' 

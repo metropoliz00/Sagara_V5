@@ -354,7 +354,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       if (hasPendingPermissions && onOpenPermissionModal) {
           onOpenPermissionModal();
       } else {
-          navigate('/activities');
+          navigate('/kegiatan');
       }
   };
 
@@ -392,7 +392,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div className="flex flex-wrap items-center gap-3">
             <button 
-                onClick={() => navigate('/liaison-book')}
+                onClick={() => navigate('/buku-penghubung')}
                 className={`relative bg-white p-2.5 rounded-xl shadow-sm border border-gray-100 transition-all ${
                     hasNewMessages 
                     ? 'text-purple-600 border-purple-200 bg-purple-50 animate-vibrate' 
@@ -450,7 +450,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* Summary Widgets - Themed */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {/* 1. Total Siswa (Ocean Blue Gradient) */}
-            <div onClick={() => navigate('/students')} className="bg-gradient-to-br from-[#5AB2FF] to-[#A0DEFF] text-white p-5 rounded-2xl shadow-lg shadow-blue-200 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group">
+            <div onClick={() => navigate('/siswa')} className="bg-gradient-to-br from-[#5AB2FF] to-[#A0DEFF] text-white p-5 rounded-2xl shadow-lg shadow-blue-200 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group">
                 <div className="flex justify-between items-start">
                     <div>
                     <p className="text-sm font-medium text-blue-100 mb-1">Total Siswa</p>
@@ -465,7 +465,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             {/* 2. Attendance (Sky Blue Gradient - Dark Text) */}
-            <div onClick={() => navigate('/attendance')} className="bg-gradient-to-br from-[#A0DEFF] to-white text-slate-800 p-5 rounded-2xl shadow-lg shadow-sky-200 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+            <div onClick={() => navigate('/absensi')} className="bg-gradient-to-br from-[#A0DEFF] to-white text-slate-800 p-5 rounded-2xl shadow-lg shadow-sky-200 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                 <div className="flex justify-between items-start">
                     <div>
                     <p className="text-sm font-medium text-slate-600 mb-1">Kehadiran Hari Ini</p>
@@ -486,7 +486,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             {/* 3. Admin Completeness (Cream - Dark Text) */}
-            <div onClick={() => navigate('/admin')} className="bg-[#FFF9D0] text-amber-900 p-5 rounded-2xl shadow-lg shadow-amber-100 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-amber-200">
+            <div onClick={() => navigate('/administrasi/kelas')} className="bg-[#FFF9D0] text-amber-900 p-5 rounded-2xl shadow-lg shadow-amber-100 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-amber-200">
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="text-sm font-bold text-amber-700 mb-1">Administrasi</p>
@@ -547,7 +547,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-            <div onClick={() => navigate('/attendance')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+            <div onClick={() => navigate('/absensi')} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                 <div className="flex items-center justify-between mb-6">
                 <div>
                     <h3 className="text-lg font-bold text-gray-800">Tren Kehadiran Minggu Ini</h3>
@@ -591,7 +591,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-                onClick={() => navigate('/learning-reports')}
+                onClick={() => navigate('/laporan-pembelajaran')}
             >
                 <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center"><FileText size={18} className="mr-2 text-indigo-500"/> Laporan Pembelajaran</h3>
                 <div className="space-y-3">
@@ -612,7 +612,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             {/* Side Lists with Alternating Colors */}
             <div className="space-y-6">
             <div 
-                onClick={() => navigate('/attendance')}
+                onClick={() => navigate('/absensi')}
                 className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
             >
                 <h3 className="text-lg font-bold text-gray-800 mb-4">Absensi Hari Ini</h3>
@@ -698,7 +698,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* Bottom Section: Target Kurikulum & Dokumentasi Pembelajaran */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             <div className={imagesForCarousel.length > 0 ? "" : "lg:col-span-2"}>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full" onClick={() => navigate('/grades')}>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full" onClick={() => navigate('/nilai')}>
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h3 className="text-lg font-bold text-gray-800">Target Kurikulum</h3>
@@ -733,7 +733,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             {imagesForCarousel.length > 0 && (
                 <div 
                     className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full"
-                    onClick={() => navigate('/learning-documentation')}
+                    onClick={() => navigate('/dokumentasi-pembelajaran')}
                 >
                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center"><Camera size={18} className="mr-2 text-indigo-500"/> Dokumentasi Pembelajaran</h3>
                     <div className="relative w-full h-64 bg-gray-100 rounded-xl shadow-inner border border-gray-200 overflow-hidden group">
@@ -782,13 +782,13 @@ const Dashboard: React.FC<DashboardProps> = ({
         <div className="fixed bottom-8 right-8 z-40 flex flex-col items-end space-y-4">
             {isFabOpen && (
             <div className="flex flex-col space-y-3 animate-fade-in-up">
-                <button onClick={() => navigate('/grades')} className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-full shadow-lg border border-gray-100 hover:scale-105 transition-transform">
+                <button onClick={() => navigate('/nilai')} className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-full shadow-lg border border-gray-100 hover:scale-105 transition-transform">
                 <span className="text-sm font-medium">Input Nilai</span><div className="bg-purple-100 p-1 rounded-full"><GraduationCap size={16} className="text-purple-600"/></div>
                 </button>
-                <button onClick={() => navigate('/attendance')} className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-full shadow-lg border border-gray-100 hover:scale-105 transition-transform">
+                <button onClick={() => navigate('/absensi')} className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-full shadow-lg border border-gray-100 hover:scale-105 transition-transform">
                 <span className="text-sm font-medium">Catat Absen</span><div className="bg-emerald-100 p-1 rounded-full"><UserCheck size={16} className="text-emerald-600"/></div>
                 </button>
-                <button onClick={() => navigate('/students')} className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-full shadow-lg border border-gray-100 hover:scale-105 transition-transform">
+                <button onClick={() => navigate('/siswa')} className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-full shadow-lg border border-gray-100 hover:scale-105 transition-transform">
                 <span className="text-sm font-medium">Tambah Siswa</span><div className="bg-blue-100 p-1 rounded-full"><Users size={16} className="text-blue-600"/></div>
                 </button>
             </div>

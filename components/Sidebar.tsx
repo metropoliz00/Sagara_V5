@@ -19,7 +19,7 @@ interface SidebarProps {
 const dashboardItem = { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'guru', 'siswa'] };
 
 // 2. Overview KS dipisahkan sebagai item mandiri (Moved from Utama)
-const supervisorItem = { id: 'supervisor-overview', label: 'Overview KS', icon: Activity, roles: ['supervisor', 'admin'] };
+const supervisorItem = { id: 'supervisi', label: 'Overview KS', icon: Activity, roles: ['supervisor', 'admin'] };
 
 // 3. Menu Groups (Updated)
 const menuGroups = [
@@ -32,46 +32,46 @@ const menuGroups = [
   {
     title: 'Data Induk',
     items: [
-      { id: 'students', label: 'Data Siswa', icon: Users, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'siswa', label: 'Data Siswa', icon: Users, roles: ['admin', 'guru', 'supervisor'] },
     ]
   },
   {
     title: 'Akademik',
     items: [
-      { id: 'attendance', label: 'Absensi', icon: CalendarCheck, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'grades', label: 'Nilai & Rapor', icon: GraduationCap, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'attitude', label: 'DPL & 7KAIH', icon: Smile, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'learning-journal', label: 'Jurnal Pembelajaran', icon: NotebookPen, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'learning-reports', label: 'Laporan Pembelajaran', icon: FileText, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'learning-documentation', label: 'Dokumentasi Pembelajaran', icon: Camera, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'absensi', label: 'Absensi', icon: CalendarCheck, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'nilai', label: 'Nilai & Rapor', icon: GraduationCap, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'sikap', label: 'DPL & 7KAIH', icon: Smile, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'jurnal-pembelajaran', label: 'Jurnal Pembelajaran', icon: NotebookPen, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'laporan-pembelajaran', label: 'Laporan Pembelajaran', icon: FileText, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'dokumentasi-pembelajaran', label: 'Dokumentasi Pembelajaran', icon: Camera, roles: ['admin', 'guru', 'supervisor'] },
     ]
   },
   {
     title: 'Kesiswaan',
     items: [
-      { id: 'student-monitor', label: 'Monitoring Siswa', icon: UserCheck, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'counseling', label: 'Konseling & Perilaku', icon: HeartHandshake, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'activities', label: 'Kegiatan & Ekskul', icon: Tent, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'liaison-book', label: 'Buku Penghubung', icon: BookOpen, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'monitor-siswa', label: 'Monitoring Siswa', icon: UserCheck, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'konseling', label: 'Konseling & Perilaku', icon: HeartHandshake, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'kegiatan', label: 'Kegiatan & Ekskul', icon: Tent, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'buku-penghubung', label: 'Buku Penghubung', icon: BookOpen, roles: ['admin', 'guru', 'supervisor'] },
     ]
   },
   {
     title: 'Administrasi',
     items: [
-      { id: 'admin', label: 'Administrasi Kelas', icon: School, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'book-loan', label: 'Peminjaman Buku', icon: Book, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'school-assets', label: 'Sarana Prasarana', icon: Building, roles: ['admin', 'supervisor'] },
-      { id: 'bos-admin', label: 'Pengelolaan BOS', icon: Wallet, roles: ['admin', 'supervisor'] },
-      { id: 'support-docs', label: 'Bukti Dukung', icon: Files, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'administrasi/kelas', label: 'Administrasi Kelas', icon: School, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'administrasi/peminjaman-buku', label: 'Peminjaman Buku', icon: Book, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'administrasi/sarana-prasarana', label: 'Sarana Prasarana', icon: Building, roles: ['admin', 'supervisor'] },
+      { id: 'administrasi/dana-bos', label: 'Pengelolaan BOS', icon: Wallet, roles: ['admin', 'supervisor'] },
+      { id: 'administrasi/bukti-dukung', label: 'Bukti Dukung', icon: Files, roles: ['admin', 'guru', 'supervisor'] },
     ]
   },
   {
     title: 'Pengaturan',
     items: [
-       { id: 'profile', label: 'Profil', icon: UserCog, roles: ['admin', 'guru', 'supervisor'] },
-       { id: 'accounts', label: 'Manajemen Akun', icon: UserCog, roles: ['admin'] },
-       { id: 'employment-links', label: 'Link Kepegawaian', icon: Link2, roles: ['admin'] },
-       { id: 'backup-restore', label: 'Backup & Restore', icon: Database, roles: ['admin'] },
+       { id: 'profil', label: 'Profil', icon: UserCog, roles: ['admin', 'guru', 'supervisor'] },
+       { id: 'manajemen-akun', label: 'Manajemen Akun', icon: UserCog, roles: ['admin'] },
+       { id: 'tautan-kepegawaian', label: 'Link Kepegawaian', icon: Link2, roles: ['admin'] },
+       { id: 'cadangan-pemulihan', label: 'Backup & Restore', icon: Database, roles: ['admin'] },
     ]
   }
 ];
@@ -82,7 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onC
   useEffect(() => {
     let activeGroup = '';
     for (const group of menuGroups) {
-        if (group.items.some(item => item.id === currentView)) {
+        if (group.items.some(item => item.id === currentView || currentView.startsWith(item.id + '/'))) {
             activeGroup = group.title;
             break;
         }

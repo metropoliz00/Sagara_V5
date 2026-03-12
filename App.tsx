@@ -57,7 +57,7 @@ const AppContent: React.FC = () => {
 
   // currentView is now derived from location.pathname
   const currentView = useMemo<ViewState>(() => {
-    const path = location.pathname.split('/')[1];
+    const path = location.pathname.slice(1);
     if (!path || path === '') return 'dashboard';
     return path as ViewState;
   }, [location.pathname]);
@@ -66,28 +66,28 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const viewTitles: Record<ViewState, string> = {
       'dashboard': 'Dashboard',
-      'students': 'Data Siswa',
-      'attendance': 'Absensi',
-      'grades': 'Nilai & Rapor',
-      'admin': 'Administrasi Kelas',
-      'counseling': 'Konseling & Pelanggaran',
-      'activities': 'Ekstrakurikuler',
-      'profile': 'Profil Guru',
+      'siswa': 'Data Siswa',
+      'absensi': 'Absensi',
+      'nilai': 'Nilai & Rapor',
+      'administrasi/kelas': 'Administrasi Kelas',
+      'konseling': 'Konseling & Pelanggaran',
+      'kegiatan': 'Ekstrakurikuler',
+      'profil': 'Profil Guru',
       'pendahuluan': 'Pendahuluan',
-      'attitude': 'Penilaian Sikap',
-      'accounts': 'Manajemen Akun',
-      'employment-links': 'Tautan Kepegawaian',
-      'learning-reports': 'Laporan Pembelajaran',
-      'learning-journal': 'Jurnal Pembelajaran',
-      'learning-documentation': 'Dokumentasi Pembelajaran',
-      'student-monitor': 'Monitor Siswa',
-      'liaison-book': 'Buku Penghubung',
-      'backup-restore': 'Backup & Restore',
-      'support-docs': 'Dokumen Pendukung',
-      'supervisor-overview': 'Supervisi',
-      'school-assets': 'Sarana Prasarana',
-      'bos-admin': 'Manajemen BOS',
-      'book-loan': 'Peminjaman Buku'
+      'sikap': 'Penilaian Sikap',
+      'manajemen-akun': 'Manajemen Akun',
+      'tautan-kepegawaian': 'Tautan Kepegawaian',
+      'laporan-pembelajaran': 'Laporan Pembelajaran',
+      'jurnal-pembelajaran': 'Jurnal Pembelajaran',
+      'dokumentasi-pembelajaran': 'Dokumentasi Pembelajaran',
+      'monitor-siswa': 'Monitor Siswa',
+      'buku-penghubung': 'Buku Penghubung',
+      'cadangan-pemulihan': 'Backup & Restore',
+      'administrasi/bukti-dukung': 'Dokumen Pendukung',
+      'supervisi': 'Supervisi',
+      'administrasi/sarana-prasarana': 'Sarana Prasarana',
+      'administrasi/dana-bos': 'Manajemen BOS',
+      'administrasi/peminjaman-buku': 'Peminjaman Buku'
     };
 
     const title = viewTitles[currentView] || 'Sistem Akademik';
@@ -213,7 +213,7 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
       if (currentUser?.role === 'supervisor' && currentView === 'dashboard') {
-          navigate('/supervisor-overview');
+          navigate('/supervisi');
       }
   }, [currentUser, currentView, navigate]);
 
@@ -519,7 +519,7 @@ const AppContent: React.FC = () => {
       } catch (e) { console.error("Auto report error:", e); handleShowNotification('Jurnal disimpan, namun gagal membuat laporan otomatis.', 'warning'); }
   };
 
-  const handleNavigateToJournal = (date: string) => { setJournalTargetDate(date); navigate('/learning-journal'); };
+  const handleNavigateToJournal = (date: string) => { setJournalTargetDate(date); navigate('/jurnal-pembelajaran'); };
   
   const handleRestoreData = async (data: any) => {
       try {
@@ -1484,7 +1484,7 @@ const AppContent: React.FC = () => {
                  <div className="flex items-center space-x-2">
                      {/* Liaison Notification Paper Plane */}
                      <button 
-                        onClick={() => navigate('/liaison-book')}
+                        onClick={() => navigate('/buku-penghubung')}
                         className={`p-2 rounded-full transition-all relative ${
                             unreadLiaisonCount > 0 
                             ? 'text-purple-500 bg-purple-50 animate-vibrate' 
@@ -1547,7 +1547,7 @@ const AppContent: React.FC = () => {
                         <div className="p-2">
                             {!isStudentRole && (
                                 <button 
-                                    onClick={() => { navigate('/profile'); setIsProfileDropdownOpen(false); }}
+                                    onClick={() => { navigate('/profil'); setIsProfileDropdownOpen(false); }}
                                     className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-[#CAF4FF]/50"
                                 >
                                     <UserCog size={16} />
@@ -1636,7 +1636,7 @@ const AppContent: React.FC = () => {
                     />
                 } />
                 <Route path="/dashboard" element={<Navigate to="/" replace />} />
-                <Route path="/students" element={
+                <Route path="/siswa" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <StudentList 
                         students={filteredStudents} 
@@ -1651,7 +1651,7 @@ const AppContent: React.FC = () => {
                         isReadOnly={isGlobalReadOnly} 
                     />
                 } />
-                <Route path="/attendance" element={
+                <Route path="/absensi" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <AttendanceView 
                         students={filteredStudents}
@@ -1671,7 +1671,7 @@ const AppContent: React.FC = () => {
                         userRole={currentUser?.role}
                     />
                 } />
-                <Route path="/grades" element={
+                <Route path="/nilai" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <GradesView 
                         students={filteredStudents} 
@@ -1685,7 +1685,7 @@ const AppContent: React.FC = () => {
                         teacherProfile={teacherProfile}
                     />
                 } />
-                <Route path="/attitude" element={
+                <Route path="/sikap" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <AttitudeView 
                         students={filteredStudents}
@@ -1698,7 +1698,7 @@ const AppContent: React.FC = () => {
                         isReadOnly={isGlobalReadOnly}
                     />
                 } />
-                <Route path="/learning-journal" element={
+                <Route path="/jurnal-pembelajaran" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <LearningJournalView 
                         classId={activeClassId}
@@ -1710,7 +1710,7 @@ const AppContent: React.FC = () => {
                         currentUser={currentUser}
                     />
                 } />
-                <Route path="/learning-reports" element={
+                <Route path="/laporan-pembelajaran" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <LearningReportsView 
                         reports={learningReports}
@@ -1722,7 +1722,7 @@ const AppContent: React.FC = () => {
                         onNavigateToJournal={handleNavigateToJournal}
                     />
                 } />
-                <Route path="/learning-documentation" element={
+                <Route path="/dokumentasi-pembelajaran" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <LearningDocumentationView 
                         documentation={filteredLearningDocumentation}
@@ -1732,7 +1732,7 @@ const AppContent: React.FC = () => {
                         classId={activeClassId}
                     />
                 } />
-                <Route path="/student-monitor" element={
+                <Route path="/monitor-siswa" element={
                     (!isAdminRole && !isSupervisor && currentUser.role !== 'guru') ? <Navigate to="/" replace /> :
                     <StudentMonitor 
                         students={filteredStudents}
@@ -1747,7 +1747,7 @@ const AppContent: React.FC = () => {
                         onUpdateStudent={handleUpdateStudent}
                     />
                 } />
-                <Route path="/counseling" element={
+                <Route path="/konseling" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <CounselingView 
                         students={filteredStudents} 
@@ -1757,7 +1757,7 @@ const AppContent: React.FC = () => {
                         classId={activeClassId}
                     />
                 } />
-                <Route path="/activities" element={
+                <Route path="/kegiatan" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <ActivitiesView 
                         students={filteredStudents} 
@@ -1772,7 +1772,7 @@ const AppContent: React.FC = () => {
                         classId={activeClassId}
                     />
                 } />
-                <Route path="/liaison-book" element={
+                <Route path="/buku-penghubung" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <LiaisonBookView
                         logs={filteredLiaison}
@@ -1782,7 +1782,7 @@ const AppContent: React.FC = () => {
                         classId={activeClassId}
                     />
                 } />
-                <Route path="/admin" element={
+                <Route path="/administrasi/kelas" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <ClassroomAdmin 
                         students={filteredStudents} 
@@ -1796,7 +1796,7 @@ const AppContent: React.FC = () => {
                         schoolProfile={schoolProfile}
                     />
                 } />
-                <Route path="/book-loan" element={
+                <Route path="/administrasi/peminjaman-buku" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <BookLoanView 
                         students={filteredStudents}
@@ -1808,7 +1808,7 @@ const AppContent: React.FC = () => {
                         onShowNotification={handleShowNotification}
                     />
                 } />
-                <Route path="/school-assets" element={
+                <Route path="/administrasi/sarana-prasarana" element={
                     (!isAdminRole && !isSupervisor) ? <Navigate to="/" replace /> :
                     <SchoolAssetsAdmin 
                         assets={schoolAssets}
@@ -1816,7 +1816,7 @@ const AppContent: React.FC = () => {
                         onDelete={handleDeleteSchoolAsset}
                     />
                 } />
-                <Route path="/bos-admin" element={
+                <Route path="/administrasi/dana-bos" element={
                     (!isAdminRole && !isSupervisor) ? <Navigate to="/" replace /> :
                     <BOSManagement
                         transactions={bosTransactions}
@@ -1826,7 +1826,7 @@ const AppContent: React.FC = () => {
                         isReadOnly={isSupervisor}
                     />
                 } />
-                <Route path="/support-docs" element={
+                <Route path="/administrasi/bukti-dukung" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <SupportDocumentsView
                         documents={filteredSupportDocuments}
@@ -1837,7 +1837,7 @@ const AppContent: React.FC = () => {
                         isReadOnly={isGlobalReadOnly}
                     />
                 } />
-                <Route path="/profile" element={
+                <Route path="/profil" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <TeacherProfile 
                         initialTeacher={teacherProfile} 
@@ -1847,7 +1847,7 @@ const AppContent: React.FC = () => {
                         userRole={currentUser?.role}
                     />
                 } />
-                <Route path="/accounts" element={
+                <Route path="/manajemen-akun" element={
                     currentUser.role !== 'admin' ? <Navigate to="/" replace /> :
                     <AccountManagement
                         users={users}
@@ -1858,7 +1858,7 @@ const AppContent: React.FC = () => {
                         onDelete={handleDeleteUserAccount}
                     />
                 } />
-                <Route path="/employment-links" element={
+                <Route path="/tautan-kepegawaian" element={
                     currentUser.role !== 'admin' ? <Navigate to="/" replace /> :
                     <EmploymentLinksAdmin 
                         links={employmentLinks}
@@ -1866,7 +1866,7 @@ const AppContent: React.FC = () => {
                         onDelete={handleDeleteEmploymentLink}
                     />
                 } />
-                <Route path="/backup-restore" element={
+                <Route path="/cadangan-pemulihan" element={
                     currentUser.role !== 'admin' ? <Navigate to="/" replace /> :
                     <BackupRestore 
                         data={{
@@ -1879,7 +1879,7 @@ const AppContent: React.FC = () => {
                         onRestore={handleRestoreData} 
                     />
                 } />
-                <Route path="/supervisor-overview" element={
+                <Route path="/supervisi" element={
                     (!isSupervisor && !isAdminRole) ? <Navigate to="/" replace /> :
                     <SupervisorOverview
                         students={students}
