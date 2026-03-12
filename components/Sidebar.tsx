@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, CalendarCheck, GraduationCap, School, LogOut, X, ChevronRight, ChevronLeft,
   UserCog, HeartHandshake, Tent, BookText, Smile, Link2, FileText, Contact, BookOpen, 
   UserCheck, Database, NotebookPen, Files, Activity, Building, Wallet, Camera, Book,
-  Star, FolderOpen, BookOpenCheck, UsersRound, Briefcase, Settings
+  Star, FolderOpen, BookOpenCheck, UsersRound, Briefcase, Settings, Award
 } from 'lucide-react';
 import { ViewState, User } from '../types';
 
@@ -36,6 +36,7 @@ const menuGroups = [
     icon: FolderOpen,
     items: [
       { id: 'siswa', label: 'Data Siswa', icon: Users, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'data-lulusan', label: 'Data Lulusan', icon: Award, roles: ['admin', 'guru', 'supervisor'] },
     ]
   },
   {

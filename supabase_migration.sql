@@ -30,6 +30,7 @@ DROP TABLE IF EXISTS attendance CASCADE;
 DROP TABLE IF EXISTS agendas CASCADE;
 DROP TABLE IF EXISTS students CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS graduates CASCADE;
 
 -- 1. Users table
 CREATE TABLE users (
@@ -439,6 +440,29 @@ ALTER TABLE schedule ENABLE ROW LEVEL SECURITY;
 
 -- Create policies to allow access for all users
 CREATE POLICY "Enable all access for all users" ON "public"."schedule"
+AS PERMISSIVE FOR ALL
+TO public
+USING (true)
+WITH CHECK (true);
+
+-- 28. Graduates table
+CREATE TABLE IF NOT EXISTS graduates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nisn TEXT,
+  name TEXT NOT NULL,
+  ijazah_number TEXT,
+  status TEXT,
+  graduation_year TEXT,
+  continued_to TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE graduates ENABLE ROW LEVEL SECURITY;
+
+-- Create policies to allow access for all users
+CREATE POLICY "Enable all access for all users" ON "public"."graduates"
 AS PERMISSIVE FOR ALL
 TO public
 USING (true)

@@ -27,6 +27,7 @@ import SupervisorOverview from './components/SupervisorOverview';
 import SchoolAssetsAdmin from './components/SchoolAssetsAdmin'; 
 import BOSManagement from './components/BOSManagement'; // NEW IMPORT
 import BookLoanView from './components/BookLoanView';
+import GraduatesView from './components/GraduatesView';
 import CustomModal from './components/CustomModal'; 
 import PaperPlaneIcon from './components/PaperPlaneIcon';
 import { ViewState, Student, AgendaItem, Extracurricular, BehaviorLog, GradeRecord, TeacherProfileData, SchoolProfileData, User, Holiday, SikapAssessment, KarakterAssessment, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, LearningJournalEntry, SupportDocument, InventoryItem, SchoolAsset, BOSTransaction, LearningDocumentation, BookLoan, BookInventory } from './types';
@@ -67,6 +68,7 @@ const AppContent: React.FC = () => {
     const viewTitles: Record<ViewState, string> = {
       'dashboard': 'Dashboard',
       'siswa': 'Data Siswa',
+      'data-lulusan': 'Data Lulusan',
       'absensi': 'Absensi',
       'nilai': 'Nilai & Rapor',
       'administrasi/kelas': 'Administrasi Kelas',
@@ -1650,6 +1652,13 @@ const AppContent: React.FC = () => {
                         onDelete={handleDeleteStudent} 
                         onShowNotification={handleShowNotification}
                         isReadOnly={isGlobalReadOnly} 
+                    />
+                } />
+                <Route path="/data-lulusan" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <GraduatesView 
+                        onShowNotification={handleShowNotification}
+                        isReadOnly={isGlobalReadOnly}
                     />
                 } />
                 <Route path="/absensi" element={

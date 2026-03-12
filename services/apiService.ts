@@ -6,7 +6,7 @@ import {
   ScheduleItem, PiketGroup, SikapAssessment, KarakterAssessment, SeatingLayouts, 
   AcademicCalendarData, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, 
   LearningJournalEntry, SupportDocument, OrganizationStructure, SchoolAsset, 
-  BOSTransaction, LearningDocumentation, BookLoan, BookInventory 
+  BOSTransaction, LearningDocumentation, BookLoan, BookInventory, Graduate 
 } from '../types';
 
 const isApiConfigured = () => {
@@ -192,6 +192,52 @@ export const apiService = {
       console.error('Sync error:', error);
       return { status: 'error', message: 'Gagal melakukan sinkronisasi: ' + error.message };
     }
+  },
+
+  // --- Graduates ---
+  getGraduates: async (): Promise<Graduate[]> => {
+    const { data, error } = await supabase.from('graduates').select('*');
+    if (error) return [];
+    return data.map((g: any) => ({
+      ...g,
+      ijazahNumber: g.ijazah_number,
+      graduationYear: g.graduation_year,
+      continuedTo: g.continued_to
+    }));
+  },
+
+  saveGraduate: async (graduate: Graduate): Promise<void> => {
+    const dbGraduate = {
+      id: graduate.id,
+      nisn: graduate.nisn,
+      name: graduate.name,
+      ijazah_number: graduate.ijazahNumber,
+      status: graduate.status,
+      graduation_year: graduate.graduationYear,
+      continued_to: graduate.continuedTo,
+      created_at: graduate.createdAt,
+      updated_at: graduate.updatedAt
+    };
+    await supabase.from('graduates').upsert(dbGraduate);
+  },
+
+  deleteGraduate: async (id: string): Promise<void> => {
+    await supabase.from('graduates').delete().eq('id', id);
+  },
+
+  saveGraduateBatch: async (graduates: Graduate[]): Promise<void> => {
+    const dbGraduates = graduates.map(g => ({
+      id: g.id,
+      nisn: g.nisn,
+      name: g.name,
+      ijazah_number: g.ijazahNumber,
+      status: g.status,
+      graduation_year: g.graduationYear,
+      continued_to: g.continuedTo,
+      created_at: g.createdAt || Date.now(),
+      updated_at: g.updatedAt || Date.now()
+    }));
+    await supabase.from('graduates').upsert(dbGraduates);
   },
 
   // --- Students ---

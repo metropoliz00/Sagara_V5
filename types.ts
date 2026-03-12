@@ -361,9 +361,22 @@ export interface KarakterAssessment {
   afirmasi?: string;
 }
 
+export interface Graduate {
+  id: string;
+  nisn: string;
+  name: string;
+  ijazahNumber: string;
+  status: string;
+  graduationYear: string;
+  continuedTo: string;
+  createdAt?: number;
+  updatedAt?: number;
+}
+
 export type ViewState = 
   | 'dashboard' 
   | 'siswa' 
+  | 'data-lulusan'
   | 'absensi' 
   | 'nilai' 
   | 'administrasi/kelas' 
