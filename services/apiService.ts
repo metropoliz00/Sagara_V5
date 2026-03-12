@@ -445,6 +445,51 @@ export const apiService = {
     });
     return Object.values(gradeMap);
   },
+  getGradesForStudent: async (studentId: string): Promise<GradeRecord | null> => {
+    const { data, error } = await supabase.from('grades').select('*').eq('student_id', studentId);
+    if (error || !data || data.length === 0) return null;
+    
+    const record: GradeRecord = {
+      studentId,
+      classId: data[0].class_id,
+      subjects: {}
+    };
+    
+    data.forEach((row: any) => {
+      record.subjects[row.subject_id] = {
+        sum1: Number(row.sum1),
+        sum2: Number(row.sum2),
+        sum3: Number(row.sum3),
+        sum4: Number(row.sum4),
+        sas: Number(row.sas)
+      };
+    });
+    return record;
+  },
+  deleteGradesForStudent: async (studentId: string): Promise<void> => {
+    const { error } = await supabase.from('grades').delete().eq('student_id', studentId);
+    if (error) console.error('Error deleting grades:', error);
+  },
+  getGradeHistory: async (studentId: string): Promise<any[]> => {
+    const { data, error } = await supabase.from('class_config').select('data').eq('class_id', `grade_history_${studentId}`).single();
+    if (error || !data) return [];
+    return data.data?.history || [];
+  },
+  saveGradeHistory: async (studentId: string, historyEntry: any): Promise<void> => {
+    const historyId = `grade_history_${studentId}`;
+    const { data: existing } = await supabase.from('class_config').select('data').eq('class_id', historyId).single();
+    const currentData = existing?.data || { history: [] };
+    
+    // Check if entry already exists for this semester and year
+    const existingIndex = currentData.history.findIndex((h: any) => h.id === historyEntry.id);
+    if (existingIndex >= 0) {
+      currentData.history[existingIndex] = historyEntry;
+    } else {
+      currentData.history.push(historyEntry);
+    }
+    
+    await supabase.from('class_config').upsert({ class_id: historyId, data: currentData }, { onConflict: 'class_id' });
+  },
   saveGrade: async (studentId: string, subjectId: string, gradeData: GradeData, classId: string): Promise<void> => {
     const { error } = await supabase.from('grades').upsert({
       student_id: studentId,

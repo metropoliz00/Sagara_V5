@@ -1661,6 +1661,10 @@ const AppContent: React.FC = () => {
                     <GraduatesView 
                         onShowNotification={handleShowNotification}
                         isReadOnly={isGlobalReadOnly}
+                        onRestore={(student) => {
+                          setStudents(prev => [...prev, student]);
+                          cacheService.set('students', [...students, student]);
+                        }}
                     />
                 } />
                 <Route path="/absensi" element={

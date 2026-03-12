@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Student, TeacherProfileData, SchoolProfileData } from '../types';
+import { Student, TeacherProfileData, SchoolProfileData, Graduate } from '../types';
 import * as XLSX from 'xlsx';
 import { compressImage } from '../utils/imageHelper';
 import QRCode from 'react-qr-code';
@@ -8,9 +8,10 @@ import {
   AlertTriangle, UserCircle, Trash2, X, FileSpreadsheet, Printer, Upload, Download,
   LayoutGrid, List as ListIcon,
   Image as ImageIcon, PieChart as PieChartIcon,
-  QrCode as QrCodeIcon, Users
+  QrCode as QrCodeIcon, Users, ArrowUpCircle, GraduationCap
 } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
+import { apiService } from '../services/apiService';
 
 import BiodataTab from './student/BiodataTab';
 import HealthTab from './student/HealthTab';
@@ -33,7 +34,7 @@ interface StudentListProps {
   isReadOnly?: boolean;
 }
 
-type TabType = 'biodata' | 'health' | 'talents' | 'economy' | 'records';
+type TabType = 'biodata' | 'health' | 'talents' | 'economy' | 'records' | 'history';
 type ViewType = 'grid' | 'list' | 'dashboard' | 'qr-codes' | 'health-data' | 'parent-data' | 'talents-data';
 
 const StudentList: React.FC<StudentListProps> = ({ 
@@ -269,6 +270,89 @@ const StudentList: React.FC<StudentListProps> = ({
       });
   };
 
+  const handleNaikKelas = async (student: Student) => {
+    const currentClass = student.classId || classId;
+    const match = currentClass.match(/^(.*?)(\d+)(.*)$/);
+    if (match) {
+      const prefix = match[1];
+      const num = parseInt(match[2], 10);
+      const suffix = match[3];
+      if (num < 6) {
+        const newClassId = `${prefix}${num + 1}${suffix}`;
+        showConfirm(`Apakah Anda yakin ingin menaikkan kelas siswa ini ke kelas ${newClassId}?`, async () => {
+          try {
+            // Save grade history
+            const currentGrades = await apiService.getGradesForStudent(student.id);
+            if (currentGrades && Object.keys(currentGrades.subjects).length > 0) {
+              const historyEntry = {
+                id: `${schoolProfile?.year || new Date().getFullYear()}-Semester ${schoolProfile?.semester || '1'}-${currentClass}`,
+                academicYear: schoolProfile?.year || new Date().getFullYear().toString(),
+                semester: schoolProfile?.semester || '1',
+                classId: currentClass,
+                timestamp: Date.now(),
+                subjects: currentGrades.subjects
+              };
+              await apiService.saveGradeHistory(student.id, historyEntry);
+              await apiService.deleteGradesForStudent(student.id);
+            }
+            
+            onUpdate({ ...student, classId: newClassId });
+            onShowNotification(`Siswa berhasil dinaikkan ke kelas ${newClassId}`, 'success');
+            setSelectedStudent(null);
+          } catch (error) {
+            console.error("Error during naik kelas:", error);
+            onShowNotification("Terjadi kesalahan saat menaikkan kelas siswa.", 'error');
+          }
+        });
+      } else {
+        onShowNotification("Siswa sudah berada di kelas tertinggi (Kelas 6).", 'warning');
+      }
+    } else {
+      onShowNotification("Format kelas tidak dikenali untuk naik kelas otomatis.", 'warning');
+    }
+  };
+
+  const handleLulus = (student: Student) => {
+    showConfirm("Apakah Anda yakin ingin meluluskan siswa ini? Data akan dipindah ke Data Lulusan.", async () => {
+      try {
+        const currentClass = student.classId || classId;
+        // Save grade history
+        const currentGrades = await apiService.getGradesForStudent(student.id);
+        if (currentGrades && Object.keys(currentGrades.subjects).length > 0) {
+          const historyEntry = {
+            id: `${schoolProfile?.year || new Date().getFullYear()}-Semester ${schoolProfile?.semester || '1'}-${currentClass}`,
+            academicYear: schoolProfile?.year || new Date().getFullYear().toString(),
+            semester: schoolProfile?.semester || '1',
+            classId: currentClass,
+            timestamp: Date.now(),
+            subjects: currentGrades.subjects
+          };
+          await apiService.saveGradeHistory(student.id, historyEntry);
+          await apiService.deleteGradesForStudent(student.id);
+        }
+
+        const graduate: Graduate = {
+          id: crypto.randomUUID(),
+          nisn: student.nisn || student.nis,
+          name: student.name,
+          ijazahNumber: '',
+          status: 'Lulus',
+          graduationYear: new Date().getFullYear().toString(),
+          continuedTo: '',
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        await apiService.saveGraduate(graduate);
+        onDelete(student.id);
+        onShowNotification("Siswa berhasil diluluskan dan dipindah ke Data Lulusan.", 'success');
+        setSelectedStudent(null);
+      } catch (error) {
+        console.error("Error graduating student:", error);
+        onShowNotification("Gagal meluluskan siswa.", 'error');
+      }
+    });
+  };
+
   const handleDownloadTemplate = () => {
     const headers = ["Class ID", "NIS", "NISN", "Nama Lengkap", "Gender (L/P)", "Tempat Lahir", "Tanggal Lahir (YYYY-MM-DD)", "Agama", "Alamat", "Nama Ayah", "Pekerjaan Ayah", "Pendidikan Ayah", "Nama Ibu", "Pekerjaan Ibu", "Pendidikan Ibu", "Nama Wali", "No HP Wali", "Pekerjaan Wali", "Status Ekonomi", "Tinggi (cm)", "Berat (kg)", "Gol Darah", "Riwayat Penyakit", "Hobi", "Cita-cita", "Prestasi", "Pelanggaran"];
     const example = ["1A", "2024001", "0012345678", "Ahmad Santoso", "L", "Surabaya", "2015-05-20", "Islam", "Jl. Merpati No. 10", "Budi Santoso", "Wiraswasta", "SMA", "Siti Aminah", "Ibu Rumah Tangga", "SMP", "Budi Santoso", "081234567890", "Wiraswasta", "Mampu", "145", "38", "O", "Tidak ada", "Sepak Bola", "Polisi", "Juara 1 Lari", "-"];
@@ -337,11 +421,26 @@ const StudentList: React.FC<StudentListProps> = ({
 
   const [detailTempAchievements, setDetailTempAchievements] = useState('');
   const [detailTempViolations, setDetailTempViolations] = useState('');
+  const [gradeHistory, setGradeHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     if (selectedStudent) {
       setDetailTempAchievements(selectedStudent.achievements?.join(', ') || '');
       setDetailTempViolations(selectedStudent.violations?.join(', ') || '');
+      
+      const fetchHistory = async () => {
+        setLoadingHistory(true);
+        try {
+          const history = await apiService.getGradeHistory(selectedStudent.id);
+          setGradeHistory(history);
+        } catch (error) {
+          console.error("Error fetching grade history:", error);
+        } finally {
+          setLoadingHistory(false);
+        }
+      };
+      fetchHistory();
     }
   }, [selectedStudent]);
 
@@ -557,6 +656,23 @@ const StudentList: React.FC<StudentListProps> = ({
             </button>
             {!isReadOnly && (
               <>
+                {selectedStudent.classId?.startsWith('6') ? (
+                  <button 
+                    onClick={() => handleLulus(selectedStudent)} 
+                    className="flex items-center bg-emerald-50 text-emerald-600 px-4 py-2 rounded-lg hover:bg-emerald-100 font-medium"
+                    title="Luluskan Siswa"
+                  >
+                    <GraduationCap size={18} className="mr-2" /> Lulus
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => handleNaikKelas(selectedStudent)} 
+                    className="flex items-center bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-100 font-medium"
+                    title="Naik Kelas"
+                  >
+                    <ArrowUpCircle size={18} className="mr-2" /> Naik Kelas
+                  </button>
+                )}
                 <button 
                     onClick={() => handleDeleteClick(selectedStudent.id)} 
                     className="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 font-medium"
@@ -610,7 +726,7 @@ const StudentList: React.FC<StudentListProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1 no-print">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-2 space-y-1 sticky top-6">
-               {[{ id: 'biodata', label: 'Biodata & Ortu', icon: User }, { id: 'health', label: 'Fisik & Kesehatan', icon: Heart }, { id: 'talents', label: 'Minat & Bakat', icon: Activity }, { id: 'economy', label: 'Sosial Ekonomi', icon: DollarSign }, { id: 'records', label: 'Prestasi & Pelanggaran', icon: AlertTriangle }].map((tab) => (
+               {[{ id: 'biodata', label: 'Biodata & Ortu', icon: User }, { id: 'health', label: 'Fisik & Kesehatan', icon: Heart }, { id: 'talents', label: 'Minat & Bakat', icon: Activity }, { id: 'economy', label: 'Sosial Ekonomi', icon: DollarSign }, { id: 'records', label: 'Prestasi & Pelanggaran', icon: AlertTriangle }, { id: 'history', label: 'History Nilai', icon: FileSpreadsheet }].map((tab) => (
                  <button key={tab.id} onClick={() => setActiveTab(tab.id as TabType)} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-[#CAF4FF] text-[#5AB2FF] shadow-sm' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`}>
                    <tab.icon size={18} /> <span>{tab.label}</span>
                  </button>
@@ -624,6 +740,64 @@ const StudentList: React.FC<StudentListProps> = ({
                 <div className={activeTab === 'talents' ? '' : 'hidden print:block'}><TalentsTab student={selectedStudent} onChange={handleChange} /></div>
                 <div className={activeTab === 'economy' ? '' : 'hidden print:block'}><EconomyTab student={selectedStudent} onChange={handleChange} /></div>
                 <div className={activeTab === 'records' ? '' : 'hidden print:block'}><RecordsTab student={selectedStudent} tempAchievements={detailTempAchievements} setTempAchievements={setDetailTempAchievements} tempViolations={detailTempViolations} setTempViolations={setDetailTempViolations}/></div>
+                <div className={activeTab === 'history' ? '' : 'hidden print:block'}>
+                  <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <FileSpreadsheet className="mr-2 text-[#5AB2FF]" size={20} /> History Nilai
+                  </h3>
+                  {loadingHistory ? (
+                    <div className="flex justify-center items-center h-32">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5AB2FF]"></div>
+                    </div>
+                  ) : gradeHistory.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                      <FileSpreadsheet size={48} className="mx-auto text-gray-300 mb-3" />
+                      <p>Belum ada history nilai untuk siswa ini.</p>
+                      <p className="text-sm mt-1">History nilai akan tersimpan otomatis saat siswa naik kelas atau lulus.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {gradeHistory.sort((a, b) => b.timestamp - a.timestamp).map((history, index) => (
+                        <div key={index} className="border border-gray-200 rounded-xl overflow-hidden">
+                          <div className="bg-[#CAF4FF]/30 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                            <div>
+                              <h4 className="font-bold text-gray-800">Tahun Ajaran: {history.academicYear}</h4>
+                              <p className="text-sm text-gray-600">Semester {history.semester} • Kelas {history.classId}</p>
+                            </div>
+                            <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200">
+                              {new Date(history.timestamp).toLocaleDateString('id-ID')}
+                            </span>
+                          </div>
+                          <div className="p-4 overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                  <th className="px-4 py-2">Mata Pelajaran</th>
+                                  <th className="px-4 py-2 text-center">Sumatif 1</th>
+                                  <th className="px-4 py-2 text-center">Sumatif 2</th>
+                                  <th className="px-4 py-2 text-center">Sumatif 3</th>
+                                  <th className="px-4 py-2 text-center">Sumatif 4</th>
+                                  <th className="px-4 py-2 text-center">SAS</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {Object.entries(history.subjects).map(([subjectId, grades]: [string, any]) => (
+                                  <tr key={subjectId} className="border-b">
+                                    <td className="px-4 py-2 font-medium text-gray-900">{subjectId}</td>
+                                    <td className="px-4 py-2 text-center">{grades.sum1 || '-'}</td>
+                                    <td className="px-4 py-2 text-center">{grades.sum2 || '-'}</td>
+                                    <td className="px-4 py-2 text-center">{grades.sum3 || '-'}</td>
+                                    <td className="px-4 py-2 text-center">{grades.sum4 || '-'}</td>
+                                    <td className="px-4 py-2 text-center font-bold text-[#5AB2FF]">{grades.sas || '-'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
              </div>
           </div>
         </div>

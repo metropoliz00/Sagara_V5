@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Graduate } from '../types';
 import * as XLSX from 'xlsx';
 import { 
-  Search, Plus, Save, Trash2, X, FileSpreadsheet, Printer, Upload, Download, Edit
+  Search, Plus, Save, Trash2, X, FileSpreadsheet, Printer, Upload, Download, Edit, RotateCcw
 } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 import { apiService } from '../services/apiService';
@@ -10,15 +10,20 @@ import { apiService } from '../services/apiService';
 interface GraduatesViewProps {
   onShowNotification: (message: string, type: 'success' | 'error' | 'warning') => void;
   isReadOnly?: boolean;
+  onRestore?: (student: any) => void;
 }
 
-const GraduatesView: React.FC<GraduatesViewProps> = ({ onShowNotification, isReadOnly = false }) => {
+const GraduatesView: React.FC<GraduatesViewProps> = ({ onShowNotification, isReadOnly = false, onRestore }) => {
   const [graduates, setGraduates] = useState<Graduate[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterYear, setFilterYear] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGraduate, setEditingGraduate] = useState<Graduate | null>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [selectedGraduateHistory, setSelectedGraduateHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [selectedGraduateName, setSelectedGraduateName] = useState('');
   const { showConfirm } = useModal();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -85,6 +90,27 @@ const GraduatesView: React.FC<GraduatesViewProps> = ({ onShowNotification, isRea
     setEditingGraduate(null);
   };
 
+  const handleViewHistory = async (graduate: Graduate) => {
+    setSelectedGraduateName(graduate.name);
+    setIsHistoryModalOpen(true);
+    setLoadingHistory(true);
+    try {
+      const history = await apiService.getGradeHistory(graduate.id);
+      setSelectedGraduateHistory(history);
+    } catch (error) {
+      console.error("Error fetching grade history:", error);
+      onShowNotification("Gagal mengambil history nilai.", 'error');
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const handleCloseHistoryModal = () => {
+    setIsHistoryModalOpen(false);
+    setSelectedGraduateHistory([]);
+    setSelectedGraduateName('');
+  };
+
   const handleSave = async () => {
     if (!formData.name || !formData.nisn || !formData.graduationYear) {
       onShowNotification("Nama, NISN, dan Tahun Lulus wajib diisi", "warning");
@@ -134,6 +160,67 @@ const GraduatesView: React.FC<GraduatesViewProps> = ({ onShowNotification, isRea
         }
       },
       "Hapus Data Lulusan"
+    );
+  };
+
+  const handleRestore = (graduate: Graduate) => {
+    showConfirm(
+      "Apakah Anda yakin ingin mengembalikan data ini ke Data Siswa (Kelas 6)?",
+      async () => {
+        try {
+          const newStudent = {
+            classId: '6',
+            nis: graduate.nisn || `NIS-${Date.now()}`,
+            nisn: graduate.nisn || '',
+            name: graduate.name,
+            gender: 'L' as 'L' | 'P',
+            birthPlace: '',
+            birthDate: '',
+            religion: '',
+            address: '',
+            fatherName: '',
+            fatherJob: '',
+            fatherEducation: '',
+            motherName: '',
+            motherJob: '',
+            motherEducation: '',
+            parentName: '',
+            parentPhone: '',
+            parentJob: '',
+            economyStatus: 'Cukup' as 'Mampu' | 'Cukup' | 'Kurang Mampu' | 'KIP',
+            height: 0,
+            weight: 0,
+            bloodType: '',
+            healthNotes: '',
+            hobbies: '',
+            ambition: '',
+            achievements: [],
+            violations: [],
+            behaviorScore: 100,
+            attendance: {
+              present: 0,
+              sick: 0,
+              permit: 0,
+              alpha: 0
+            },
+            photo: '',
+            teacherNotes: ''
+          };
+          
+          const createdStudent = await apiService.createStudent(newStudent);
+          await apiService.deleteGraduate(graduate.id);
+          
+          setGraduates(prev => prev.filter(g => g.id !== graduate.id));
+          if (onRestore) {
+            onRestore(createdStudent);
+          }
+          onShowNotification("Data lulusan berhasil dikembalikan ke Data Siswa (Kelas 6)", "success");
+        } catch (error) {
+          console.error("Error restoring graduate:", error);
+          onShowNotification("Gagal mengembalikan data lulusan", "error");
+        }
+      },
+      "Restore Data Lulusan"
     );
   };
 
@@ -398,6 +485,20 @@ const GraduatesView: React.FC<GraduatesViewProps> = ({ onShowNotification, isRea
                     {!isReadOnly && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => handleViewHistory(graduate)}
+                            className="p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="History Nilai"
+                          >
+                            <FileSpreadsheet size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleRestore(graduate)}
+                            className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors"
+                            title="Restore ke Data Siswa"
+                          >
+                            <RotateCcw size={18} />
+                          </button>
                           <button
                             onClick={() => handleOpenModal(graduate)}
                             className="p-2 text-slate-400 hover:text-[#5AB2FF] hover:bg-[#CAF4FF]/50 rounded-lg transition-colors"
