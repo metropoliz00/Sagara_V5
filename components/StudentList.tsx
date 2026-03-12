@@ -63,6 +63,7 @@ const StudentList: React.FC<StudentListProps> = ({
   const historyFileInputRef = useRef<HTMLInputElement>(null);
   const rekapFileInputRef = useRef<HTMLInputElement>(null);
   const bulkHistoryFileInputRef = useRef<HTMLInputElement>(null);
+  const bulkRekapFileInputRef = useRef<HTMLInputElement>(null);
 
   // Helper completeness functions
   const calculateCompleteness = (s: Student) => {
@@ -1008,6 +1009,133 @@ const StudentList: React.FC<StudentListProps> = ({
     XLSX.writeFile(wb, "template_bulk_history_nilai.xlsx");
   };
 
+  const handleDownloadBulkRekapTemplate = () => {
+    const periods = [
+      '2021/2022 Smt 1', '2021/2022 Smt 2',
+      '2022/2023 Smt 1', '2022/2023 Smt 2',
+      '2023/2024 Smt 1', '2023/2024 Smt 2'
+    ];
+
+    const templateData = students.flatMap(s => 
+      MOCK_SUBJECTS.map(sub => {
+        const row: any = { 
+          'NIS': s.nis,
+          'Nama': s.name,
+          'Mata Pelajaran': sub.name 
+        };
+        periods.forEach(p => { row[p] = ''; });
+        return row;
+      })
+    );
+
+    if (templateData.length === 0) {
+      MOCK_SUBJECTS.forEach(sub => {
+        const row: any = { 
+          'NIS': '2024001',
+          'Nama': 'Ahmad Santoso',
+          'Mata Pelajaran': sub.name 
+        };
+        periods.forEach(p => { row[p] = ''; });
+        templateData.push(row);
+      });
+    }
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template Rekap Masal");
+    XLSX.writeFile(wb, `Template_Rekap_Nilai_Masal.xlsx`);
+  };
+
+  const handleBulkImportRekapExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+        if (data.length === 0) {
+          onShowNotification("File kosong atau tidak valid.", "warning");
+          return;
+        }
+
+        // Group data by student (NIS or Name)
+        const studentGroups: { [key: string]: any[] } = {};
+        data.forEach(row => {
+          const key = row['NIS'] || row['Nama'];
+          if (key) {
+            if (!studentGroups[key]) studentGroups[key] = [];
+            studentGroups[key].push(row);
+          }
+        });
+
+        let totalSuccess = 0;
+        let studentCount = 0;
+
+        for (const [key, rows] of Object.entries(studentGroups)) {
+          // Find student
+          const student = students.find(s => s.nis?.toString() === key?.toString() || s.name === key);
+          if (!student) continue;
+
+          studentCount++;
+          const historyEntries: { [key: string]: any } = {};
+
+          rows.forEach(row => {
+            const subjectName = row['Mata Pelajaran'];
+            if (!subjectName) return;
+
+            Object.keys(row).forEach(colKey => {
+              const match = colKey.match(/(\d{4}\/\d{4})\s+Smt\s+(\d+)/i);
+              if (match) {
+                const academicYear = match[1];
+                const semester = match[2];
+                const periodKey = `${academicYear}-${semester}`;
+
+                if (!historyEntries[periodKey]) {
+                  historyEntries[periodKey] = {
+                    id: `${academicYear}-S${semester}-${student.classId}-${Date.now()}`,
+                    academicYear,
+                    semester,
+                    classId: student.classId,
+                    timestamp: Date.now(),
+                    subjects: {}
+                  };
+                }
+
+                historyEntries[periodKey].subjects[subjectName] = {
+                  sum1: '', sum2: '', sum3: '', sum4: '',
+                  sas: row[colKey] || ''
+                };
+              }
+            });
+          });
+
+          const entries = Object.values(historyEntries);
+          for (const entry of entries) {
+            try {
+              await apiService.saveGradeHistory(student.id, entry);
+              totalSuccess++;
+            } catch (err) {
+              console.error(`Error saving rekap for student ${student.name}:`, err);
+            }
+          }
+        }
+
+        onShowNotification(`Berhasil mengimpor rekap untuk ${studentCount} siswa (${totalSuccess} entri semester).`, "success");
+      } catch (error) {
+        console.error("Error bulk importing rekap:", error);
+        onShowNotification("Gagal memproses file rekap masal.", "error");
+      }
+    };
+    reader.readAsBinaryString(file);
+    if (bulkRekapFileInputRef.current) bulkRekapFileInputRef.current.value = '';
+  };
+
   const handleDownloadHistoryTemplate = () => {
     const templateData = MOCK_SUBJECTS.map(sub => ({
       'Mata Pelajaran': sub.name,
@@ -1467,6 +1595,7 @@ const StudentList: React.FC<StudentListProps> = ({
            
             {!isReadOnly && <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx, .xls, .csv" />}
             {!isReadOnly && <input type="file" ref={bulkHistoryFileInputRef} onChange={handleBulkImportHistoryExcel} className="hidden" accept=".xlsx, .xls" />}
+            {!isReadOnly && <input type="file" ref={bulkRekapFileInputRef} onChange={handleBulkImportRekapExcel} className="hidden" accept=".xlsx, .xls" />}
             
             <div className="flex flex-wrap gap-2 no-print">
               <div className="relative group">
@@ -1479,6 +1608,9 @@ const StudentList: React.FC<StudentListProps> = ({
                   </button>
                   <button onClick={handleDownloadBulkHistoryTemplate} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
                     <FileSpreadsheet size={14} className="mr-2" /> Template History
+                  </button>
+                  <button onClick={handleDownloadBulkRekapTemplate} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
+                    <FileSpreadsheet size={14} className="mr-2 text-emerald-500" /> Template Rekap
                   </button>
                 </div>
               </div>
@@ -1493,6 +1625,9 @@ const StudentList: React.FC<StudentListProps> = ({
                   </button>
                   <button onClick={() => bulkHistoryFileInputRef.current?.click()} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
                     <FileSpreadsheet size={14} className="mr-2" /> Import History
+                  </button>
+                  <button onClick={() => bulkRekapFileInputRef.current?.click()} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
+                    <FileSpreadsheet size={14} className="mr-2 text-emerald-500" /> Import Rekap
                   </button>
                 </div>
               </div>
