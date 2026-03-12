@@ -324,6 +324,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
 
     const isSemester1 = currentMonth >= 6;
     const startMonth = isSemester1 ? 6 : 0;
+    const endMonth = isSemester1 ? 11 : 5;
 
     const accumulatedRecords = allAttendance.filter((r: any) => {
         if (!r.date) return false;
@@ -336,7 +337,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
         return String(r.studentId) === String(student.id) && 
                y === currentYear &&
                m >= startMonth &&
-               m <= currentMonth;
+               m <= endMonth;
     });
 
     const counts = { present: 0, sick: 0, permit: 0, alpha: 0, dispensation: 0 };
@@ -359,7 +360,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
     return { 
         percentage, 
         counts, 
-        monthName: now.toLocaleString('id-ID', { month: 'long' }), 
+        monthName: new Date(currentYear, endMonth).toLocaleString('id-ID', { month: 'long' }), 
         startMonthName: new Date(currentYear, startMonth).toLocaleString('id-ID', { month: 'long' }),
         semesterName: isSemester1 ? 'Ganjil' : 'Genap',
         year: currentYear,

@@ -30,19 +30,21 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ students, allAttend
         const currentYear = now.getFullYear();
         const isSemester1 = currentMonth >= 6;
         const startMonth = isSemester1 ? 6 : 0;
+        const endMonth = isSemester1 ? 11 : 5;
         return {
             isSemester1,
             startMonth,
+            endMonth,
             currentMonth,
             currentYear,
             semesterName: isSemester1 ? 'Ganjil' : 'Genap',
             startMonthName: new Date(currentYear, startMonth).toLocaleString('id-ID', { month: 'long' }),
-            currentMonthName: now.toLocaleString('id-ID', { month: 'long' })
+            currentMonthName: new Date(currentYear, endMonth).toLocaleString('id-ID', { month: 'long' })
         };
     }, []);
 
     const studentAttendanceRecap = useMemo(() => {
-        const { startMonth, currentMonth, currentYear } = currentSemesterInfo;
+        const { startMonth, endMonth, currentYear } = currentSemesterInfo;
         
         return students.map(student => {
             const accumulatedRecords = allAttendanceRecords.filter((r: any) => {
@@ -55,7 +57,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ students, allAttend
                 return String(r.studentId) === String(student.id) && 
                        y === currentYear &&
                        m >= startMonth &&
-                       m <= currentMonth;
+                       m <= endMonth;
             });
 
             const counts = { S: 0, I: 0, A: 0, D: 0, H: 0 };
