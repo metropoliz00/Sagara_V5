@@ -3,7 +3,8 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, CalendarCheck, GraduationCap, School, LogOut, X, ChevronRight, ChevronLeft,
   UserCog, HeartHandshake, Tent, BookText, Smile, Link2, FileText, Contact, BookOpen, 
-  UserCheck, Database, NotebookPen, Files, Activity, Building, Wallet, Camera, Book
+  UserCheck, Database, NotebookPen, Files, Activity, Building, Wallet, Camera, Book,
+  Star, FolderOpen, BookOpenCheck, UsersRound, Briefcase, Settings
 } from 'lucide-react';
 import { ViewState, User } from '../types';
 
@@ -25,18 +26,21 @@ const supervisorItem = { id: 'supervisi', label: 'Overview KS', icon: Activity, 
 const menuGroups = [
   {
     title: 'Utama',
+    icon: Star,
     items: [
       { id: 'pendahuluan', label: 'Pendahuluan', icon: BookText, roles: ['admin', 'guru', 'supervisor'] },
     ]
   },
   {
     title: 'Data Induk',
+    icon: FolderOpen,
     items: [
       { id: 'siswa', label: 'Data Siswa', icon: Users, roles: ['admin', 'guru', 'supervisor'] },
     ]
   },
   {
     title: 'Akademik',
+    icon: BookOpenCheck,
     items: [
       { id: 'absensi', label: 'Absensi', icon: CalendarCheck, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'nilai', label: 'Nilai & Rapor', icon: GraduationCap, roles: ['admin', 'guru', 'supervisor'] },
@@ -48,6 +52,7 @@ const menuGroups = [
   },
   {
     title: 'Kesiswaan',
+    icon: UsersRound,
     items: [
       { id: 'monitor-siswa', label: 'Monitoring Siswa', icon: UserCheck, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'konseling', label: 'Konseling & Perilaku', icon: HeartHandshake, roles: ['admin', 'guru', 'supervisor'] },
@@ -57,6 +62,7 @@ const menuGroups = [
   },
   {
     title: 'Administrasi',
+    icon: Briefcase,
     items: [
       { id: 'administrasi/kelas', label: 'Administrasi Kelas', icon: School, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'administrasi/peminjaman-buku', label: 'Peminjaman Buku', icon: Book, roles: ['admin', 'guru', 'supervisor'] },
@@ -67,6 +73,7 @@ const menuGroups = [
   },
   {
     title: 'Pengaturan',
+    icon: Settings,
     items: [
        { id: 'profil', label: 'Profil', icon: UserCog, roles: ['admin', 'guru', 'supervisor'] },
        { id: 'manajemen-akun', label: 'Manajemen Akun', icon: UserCog, roles: ['admin'] },
@@ -211,10 +218,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onC
                   title={isCollapsed ? group.title : undefined}
                 >
                   {isCollapsed ? (
-                    <span className="w-6 border-b-2 border-slate-200 rounded-full"></span>
+                    <group.icon size={18} className="text-slate-400 hover:text-[#5AB2FF] transition-colors" />
                   ) : (
                     <>
-                      <span>{group.title}</span>
+                      <div className="flex items-center space-x-2">
+                        <group.icon size={14} className="text-slate-400" />
+                        <span>{group.title}</span>
+                      </div>
                       <ChevronRight size={14} className={`transform transition-transform duration-200 ${isGroupOpen ? 'rotate-90' : ''}`} />
                     </>
                   )}
