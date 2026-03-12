@@ -24,6 +24,7 @@ interface StudentListProps {
   teacherProfile?: TeacherProfileData;
   schoolProfile?: SchoolProfileData;
   classId: string;
+  allAttendanceRecords: any[];
   onAdd: (student: Omit<Student, 'id'>) => void;
   onBatchAdd?: (students: Omit<Student, 'id'>[]) => void;
   onUpdate: (student: Student) => void;
@@ -36,7 +37,7 @@ type TabType = 'biodata' | 'health' | 'talents' | 'economy' | 'records';
 type ViewType = 'grid' | 'list' | 'dashboard' | 'qr-codes' | 'health-data' | 'parent-data' | 'talents-data';
 
 const StudentList: React.FC<StudentListProps> = ({ 
-  students, teacherProfile, schoolProfile, classId,
+  students, teacherProfile, schoolProfile, classId, allAttendanceRecords,
   onAdd, onBatchAdd, onUpdate, onDelete, onShowNotification, isReadOnly = false
 }) => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -536,7 +537,7 @@ const StudentList: React.FC<StudentListProps> = ({
                     </div>
                 </div>
             </div>
-            <StudentDashboard students={students} schoolProfile={schoolProfile} teacherProfile={teacherProfile} />
+            <StudentDashboard students={students} allAttendanceRecords={allAttendanceRecords} schoolProfile={schoolProfile} teacherProfile={teacherProfile} />
         </div>
     );
   }

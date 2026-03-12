@@ -1643,6 +1643,7 @@ const AppContent: React.FC = () => {
                         teacherProfile={teacherProfile} 
                         schoolProfile={schoolProfile}
                         classId={activeClassId}
+                        allAttendanceRecords={allAttendanceRecords}
                         onAdd={handleAddStudent}
                         onBatchAdd={handleBatchAddStudents} 
                         onUpdate={handleUpdateStudent} 

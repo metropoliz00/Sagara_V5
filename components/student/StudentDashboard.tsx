@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Student, SchoolProfileData, TeacherProfileData, ViewState } from '../../types';
-import { BarChart2, Calendar, Users, Briefcase, GraduationCap, Heart, Sparkles, DollarSign, Trophy, AlertTriangle, Bell } from 'lucide-react';
+import { BarChart2, Calendar, Users, Briefcase, GraduationCap, Heart, Sparkles, DollarSign, Trophy, AlertTriangle, Bell, Activity } from 'lucide-react';
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
   Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart
@@ -10,6 +10,7 @@ import {
 
 interface StudentDashboardProps {
     students: Student[];
+    allAttendanceRecords: any[];
     schoolProfile?: SchoolProfileData;
     teacherProfile?: TeacherProfileData;
     hasNewMessages?: boolean;
@@ -20,8 +21,60 @@ const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6'
 const POSITIVE_COLOR = '#10b981'; // green
 const NEGATIVE_COLOR = '#ef4444'; // red
 
-const StudentDashboard: React.FC<StudentDashboardProps> = ({ students, schoolProfile, teacherProfile, hasNewMessages = false, unreadMessageCount = 0 }) => {
+const StudentDashboard: React.FC<StudentDashboardProps> = ({ students, allAttendanceRecords, schoolProfile, teacherProfile, hasNewMessages = false, unreadMessageCount = 0 }) => {
     const navigate = useNavigate();
+
+    const currentSemesterInfo = useMemo(() => {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        const isSemester1 = currentMonth >= 6;
+        const startMonth = isSemester1 ? 6 : 0;
+        return {
+            isSemester1,
+            startMonth,
+            currentMonth,
+            currentYear,
+            semesterName: isSemester1 ? 'Ganjil' : 'Genap',
+            startMonthName: new Date(currentYear, startMonth).toLocaleString('id-ID', { month: 'long' }),
+            currentMonthName: now.toLocaleString('id-ID', { month: 'long' })
+        };
+    }, []);
+
+    const studentAttendanceRecap = useMemo(() => {
+        const { startMonth, currentMonth, currentYear } = currentSemesterInfo;
+        
+        return students.map(student => {
+            const accumulatedRecords = allAttendanceRecords.filter((r: any) => {
+                if (!r.date) return false;
+                const parts = r.date.split('-');
+                if (parts.length !== 3) return false;
+                const y = parseInt(parts[0]);
+                const m = parseInt(parts[1]) - 1;
+                
+                return String(r.studentId) === String(student.id) && 
+                       y === currentYear &&
+                       m >= startMonth &&
+                       m <= currentMonth;
+            });
+
+            const counts = { S: 0, I: 0, A: 0, D: 0, H: 0 };
+            accumulatedRecords.forEach((r: any) => {
+                if (r.status === 'sick') counts.S++;
+                else if (r.status === 'permit') counts.I++;
+                else if (r.status === 'alpha') counts.A++;
+                else if (r.status === 'dispensation') counts.D++;
+                else if (r.status === 'present') counts.H++;
+            });
+
+            return {
+                id: student.id,
+                name: student.name,
+                ...counts,
+                totalHadir: counts.H + counts.D
+            };
+        });
+    }, [students, allAttendanceRecords, currentSemesterInfo]);
 
     const calculateAge = (birthDate: string): number => {
         if (!birthDate) return 0;
@@ -269,6 +322,42 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ students, schoolPro
 
             {/* NEW DASHBOARDS SECTION */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 no-print-report">
+                {/* Attendance Recap Dashboard */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border col-span-1 lg:col-span-2">
+                    <h3 className="font-bold text-gray-700 flex items-center mb-2">
+                        <Activity size={16} className="mr-2 text-blue-500" /> 
+                        Rekap Absensi Semester {currentSemesterInfo.semesterName} ({currentSemesterInfo.startMonthName} - {currentSemesterInfo.currentMonthName} {currentSemesterInfo.currentYear})
+                    </h3>
+                    <div className="max-h-[300px] overflow-y-auto">
+                        <table className="w-full text-xs text-left border-collapse">
+                            <thead className="bg-gray-50 font-semibold sticky top-0">
+                                <tr>
+                                    <th className="border p-2 w-8">No</th>
+                                    <th className="border p-2">Nama Siswa</th>
+                                    <th className="border p-2 text-center bg-emerald-50 text-emerald-700">Hadir</th>
+                                    <th className="border p-2 text-center bg-amber-50 text-amber-700">Sakit</th>
+                                    <th className="border p-2 text-center bg-blue-50 text-blue-700">Izin</th>
+                                    <th className="border p-2 text-center bg-red-50 text-red-700">Alpha</th>
+                                    <th className="border p-2 text-center bg-purple-50 text-purple-700">Dispen</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {studentAttendanceRecap.map((recap, index) => (
+                                    <tr key={recap.id} className="hover:bg-gray-50">
+                                        <td className="border p-2 text-center">{index + 1}</td>
+                                        <td className="border p-2 font-medium">{recap.name}</td>
+                                        <td className="border p-2 text-center font-bold text-emerald-600">{recap.totalHadir}</td>
+                                        <td className="border p-2 text-center font-bold text-amber-600">{recap.S}</td>
+                                        <td className="border p-2 text-center font-bold text-blue-600">{recap.I}</td>
+                                        <td className="border p-2 text-center font-bold text-red-600">{recap.A}</td>
+                                        <td className="border p-2 text-center font-bold text-purple-600">{recap.D}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 {/* Health Dashboard */}
                 <div className="bg-white p-4 rounded-lg shadow-sm border">
                     <h3 className="font-bold text-gray-700 flex items-center mb-2"><Heart size={16} className="mr-2 text-red-500" /> Tabel Data Kesehatan</h3>

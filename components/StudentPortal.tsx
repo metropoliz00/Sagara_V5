@@ -326,11 +326,17 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
     const startMonth = isSemester1 ? 6 : 0;
 
     const accumulatedRecords = allAttendance.filter((r: any) => {
-        const recordDate = new Date(r.date);
+        if (!r.date) return false;
+        // Parse date manually to avoid timezone shifts
+        const parts = r.date.split('-');
+        if (parts.length !== 3) return false;
+        const y = parseInt(parts[0]);
+        const m = parseInt(parts[1]) - 1; // 0-indexed
+        
         return String(r.studentId) === String(student.id) && 
-               recordDate.getFullYear() === currentYear &&
-               recordDate.getMonth() >= startMonth &&
-               recordDate.getMonth() <= currentMonth;
+               y === currentYear &&
+               m >= startMonth &&
+               m <= currentMonth;
     });
 
     const counts = { present: 0, sick: 0, permit: 0, alpha: 0, dispensation: 0 };
@@ -916,7 +922,33 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
 
           {/* --- ATTENDANCE & PERMISSION TAB --- */}
           {activeTab === 'attendance' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                  {/* Accumulated Attendance Stats (Also shown here for clarity) */}
+                  <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                      <h3 className="font-bold text-gray-800 mb-4 flex items-center">
+                          <Activity className="mr-2 text-[#5AB2FF]" size={18}/> Rekap Laporan Absensi Semester {attendanceStats.semesterName} ({attendanceStats.startMonthName} - {attendanceStats.monthName} {attendanceStats.year})
+                      </h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                          <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-center">
+                              <span className="text-2xl font-black text-emerald-600 block mb-1">{attendanceStats.counts.present + attendanceStats.counts.dispensation}</span>
+                              <span className="text-xs font-bold text-emerald-700 uppercase">Hadir</span>
+                          </div>
+                          <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl text-center">
+                              <span className="text-2xl font-black text-amber-600 block mb-1">{attendanceStats.counts.sick}</span>
+                              <span className="text-xs font-bold text-amber-700 uppercase">Sakit</span>
+                          </div>
+                          <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-center">
+                              <span className="text-2xl font-black text-blue-600 block mb-1">{attendanceStats.counts.permit}</span>
+                              <span className="text-xs font-bold text-blue-700 uppercase">Izin</span>
+                          </div>
+                          <div className="bg-red-50 border border-red-100 p-4 rounded-xl text-center">
+                              <span className="text-2xl font-black text-red-600 block mb-1">{attendanceStats.counts.alpha}</span>
+                              <span className="text-xs font-bold text-red-700 uppercase">Alpha</span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Form Pengajuan */}
                   <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                       <h3 className="font-bold text-gray-800 mb-4 flex items-center">
@@ -1012,6 +1044,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
                       </div>
                   </div>
               </div>
+          </div>
           )}
 
           {/* --- LIAISON BOOK TAB --- */}
