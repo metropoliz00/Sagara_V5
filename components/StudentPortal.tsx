@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Student, GradeRecord, LiaisonLog, AgendaItem, Material, BehaviorLog, PermissionRequest, KarakterAssessment, KARAKTER_INDICATORS, KarakterIndicatorKey, LearningDocumentation, BookLoan } from '../types';
-import { MOCK_SUBJECTS, CALENDAR_CODES, PREFILLED_CALENDAR_2025 } from '../constants';
+import { MOCK_SUBJECTS, CALENDAR_CODES, PREFILLED_CALENDAR_2025, HOLIDAY_DESCRIPTIONS_2025_2026 } from '../constants';
 import { 
   User, Calendar, Send, FileText, CheckCircle, XCircle, 
   BookOpen, LayoutDashboard, Clock,
@@ -494,7 +494,8 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
               const code = monthCalendarData[i - 1];
               if (CALENDAR_CODES[code]) {
                   holidayCode = code;
-                  holidayLabel = CALENDAR_CODES[code].label;
+                  const specificDescription = HOLIDAY_DESCRIPTIONS_2025_2026[dateStr];
+                  holidayLabel = specificDescription || CALENDAR_CODES[code].label;
               }
           } else if (isSunday) {
               holidayCode = 'LU';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AcademicCalendarData, Holiday } from '../../types';
 import { Calendar, Save, Loader2, RefreshCw, AlertTriangle, X, Lock } from 'lucide-react';
-import { CALENDAR_CODES, PREFILLED_CALENDAR_2025 } from '../../constants';
+import { CALENDAR_CODES, PREFILLED_CALENDAR_2025, HOLIDAY_DESCRIPTIONS_2025_2026 } from '../../constants';
 
 interface AcademicCalendarTabProps {
   initialData: AcademicCalendarData;
@@ -15,24 +15,6 @@ interface AcademicCalendarTabProps {
 const HOLIDAY_CODES = ['LHB', 'LU', 'LS1', 'LS2', 'CB', 'LHR'];
 
 // ... (Holiday Descriptions and Prefilled Data remain the same)
-const HOLIDAY_DESCRIPTIONS_2025_2026: { [key: string]: string } = {
-  '2025-08-17': 'HUT Republik Indonesia',
-  '2025-09-05': 'Maulud Nabi Muhammad SAW',
-  '2025-12-25': 'Hari Raya Natal',
-  '2026-01-01': 'Tahun Baru Masehi',
-  '2026-01-16': "Isro' Mi'roj Nabi Muhammad SAW",
-  '2026-02-17': 'Tahun Baru Imlek 2577',
-  '2026-03-19': 'Hari Raya Nyepi Tahun Saka 1948',
-  '2026-03-20': 'Hari Raya Idul Fitri 1447 H',
-  '2026-03-21': 'Hari Raya Idul Fitri 1447 H',
-  '2026-04-03': 'Wafat Yesus Kristus',
-  '2026-05-01': 'Hari Buruh Internasional',
-  '2026-05-14': 'Kenaikan Yesus Kristus',
-  '2026-05-27': 'Hari Raya Idul Adha',
-  '2026-05-31': 'Hari Raya Waisak 2570',
-  '2026-06-01': 'Hari Lahir Pancasila',
-  '2026-06-16': 'Tahun Baru Hijriyah 1448',
-};
 
 const AcademicCalendarTab: React.FC<AcademicCalendarTabProps> = ({ initialData, onSave, onAddHoliday, onShowNotification, classId, isReadOnly = false }) => {
   const [startYear, setStartYear] = useState(2025);
