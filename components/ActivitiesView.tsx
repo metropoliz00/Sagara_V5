@@ -232,7 +232,10 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
       />
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print">
-        <div><h2 className="text-2xl font-bold text-gray-800">Kegiatan & Agenda</h2><p className="text-gray-500">Manajemen ekskul dan agenda kelas.</p></div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Kegiatan</h2>
+          <p className="text-gray-500">Daftar ekskul dan agenda kelas.</p>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx, .xls, .csv" />
             <div className="flex bg-white p-1 rounded-xl border border-[#CAF4FF] shadow-sm mr-2">
@@ -350,6 +353,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                 onDeleteAgenda={onDeleteAgenda}
                 onShowNotification={onShowNotification}
                 classId={classId}
+                hideHeader={true}
             />
         )}
       </div>

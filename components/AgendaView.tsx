@@ -15,11 +15,12 @@ interface AgendaViewProps {
   onDeleteAgenda: (id: string) => void;
   onShowNotification: (message: string, type: 'success' | 'error' | 'warning') => void;
   classId: string;
+  hideHeader?: boolean;
 }
 
 const AgendaView: React.FC<AgendaViewProps> = ({ 
   agendas, onAddAgenda, onUpdateAgenda, onToggleAgenda, onDeleteAgenda, 
-  onShowNotification, classId 
+  onShowNotification, classId, hideHeader = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -105,23 +106,25 @@ const AgendaView: React.FC<AgendaViewProps> = ({
         onCancel={() => setConfirmModal(prev => ({...prev, isOpen: false}))}
       />
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Agenda Kelas</h2>
-          <p className="text-gray-500">Manajemen jadwal dan agenda kegiatan kelas.</p>
+      {!hideHeader && (
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Agenda</h2>
+            <p className="text-gray-500">Jadwal dan agenda kegiatan kelas.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button 
+              onClick={() => setIsAddModalOpen(true)} 
+              className="p-2 bg-[#5AB2FF] text-white rounded-lg hover:bg-[#A0DEFF] shadow-md flex items-center gap-2 font-bold"
+            >
+              <Plus size={18} /> <span>Tambah Agenda</span>
+            </button>
+            <button onClick={handlePrint} className="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">
+              <Printer size={18}/>
+            </button>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button 
-            onClick={() => setIsAddModalOpen(true)} 
-            className="p-2 bg-[#5AB2FF] text-white rounded-lg hover:bg-[#A0DEFF] shadow-md flex items-center gap-2 font-bold"
-          >
-            <Plus size={18} /> <span>Tambah Agenda</span>
-          </button>
-          <button onClick={handlePrint} className="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">
-            <Printer size={18}/>
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-2xl border border-[#CAF4FF] shadow-sm no-print flex flex-wrap gap-4 items-end">
