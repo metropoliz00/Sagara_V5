@@ -446,6 +446,37 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
   }, [showRecapReport, grades, student.id, student.classId]);
 
 
+  // -- CALENDAR STATE --
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
+
+  const calendarDays = useMemo(() => {
+      const year = calendarMonth.getFullYear();
+      const month = calendarMonth.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      
+      const days = [];
+      // Pad start (0 = Sunday, 1 = Monday, etc.)
+      for (let i = 0; i < firstDay.getDay(); i++) {
+          days.push(null);
+      }
+      
+      for (let i = 1; i <= lastDay.getDate(); i++) {
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+          const record = allAttendance.find((r: any) => String(r.studentId) === String(student.id) && r.date === dateStr);
+          days.push({
+              day: i,
+              dateStr,
+              status: record ? record.status : null,
+              reason: record ? record.reason : null
+          });
+      }
+      return days;
+  }, [calendarMonth, allAttendance, student.id]);
+
+  const prevMonth = () => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1));
+  const nextMonth = () => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1));
+
   const TABS = [
     { id: 'dashboard', label: 'Ringkasan', icon: LayoutDashboard },
     { id: 'attendance', label: 'Izin & Absensi', icon: Calendar },
@@ -948,6 +979,93 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
                               <span className="text-2xl font-black text-red-600 block mb-1">{attendanceStats.counts.alpha}</span>
                               <span className="text-xs font-bold text-red-700 uppercase">Alpha</span>
                           </div>
+                      </div>
+                  </div>
+
+                  {/* Calendar View */}
+                  <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                      <div className="flex justify-between items-center mb-4">
+                          <h3 className="font-bold text-gray-800 flex items-center">
+                              <Calendar className="mr-2 text-[#5AB2FF]" size={18}/> Kalender Kehadiran
+                          </h3>
+                          <div className="flex items-center space-x-2">
+                              <button onClick={prevMonth} className="p-1 rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
+                                  <ChevronLeft size={20} />
+                              </button>
+                              <span className="font-bold text-sm text-gray-700 w-32 text-center">
+                                  {calendarMonth.toLocaleString('id-ID', { month: 'long', year: 'numeric' })}
+                              </span>
+                              <button onClick={nextMonth} className="p-1 rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
+                                  <ChevronRight size={20} />
+                              </button>
+                          </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-7 gap-1 mb-2">
+                          {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(day => (
+                              <div key={day} className="text-center text-xs font-bold text-gray-400 py-2">{day}</div>
+                          ))}
+                      </div>
+                      <div className="grid grid-cols-7 gap-2">
+                          {calendarDays.map((dayData, index) => {
+                              if (!dayData) {
+                                  return <div key={`empty-${index}`} className="h-12 rounded-lg bg-gray-50/50"></div>;
+                              }
+                              
+                              let bgColor = 'bg-gray-50 hover:bg-gray-100';
+                              let textColor = 'text-gray-700';
+                              let borderColor = 'border-gray-100';
+                              
+                              if (dayData.status === 'sick') {
+                                  bgColor = 'bg-amber-100';
+                                  textColor = 'text-amber-800';
+                                  borderColor = 'border-amber-200';
+                              } else if (dayData.status === 'permit') {
+                                  bgColor = 'bg-blue-100';
+                                  textColor = 'text-blue-800';
+                                  borderColor = 'border-blue-200';
+                              } else if (dayData.status === 'alpha') {
+                                  bgColor = 'bg-red-100';
+                                  textColor = 'text-red-800';
+                                  borderColor = 'border-red-200';
+                              } else if (dayData.status === 'present' || dayData.status === 'dispensation') {
+                                  bgColor = 'bg-emerald-50';
+                                  textColor = 'text-emerald-700';
+                                  borderColor = 'border-emerald-100';
+                              }
+
+                              const isToday = dayData.dateStr === new Date().toISOString().split('T')[0];
+
+                              return (
+                                  <div 
+                                      key={dayData.dateStr} 
+                                      className={`relative h-14 rounded-xl border flex flex-col items-center justify-center transition-all group cursor-default ${bgColor} ${borderColor} ${isToday ? 'ring-2 ring-[#5AB2FF] ring-offset-1' : ''}`}
+                                  >
+                                      <span className={`text-sm font-bold ${textColor}`}>{dayData.day}</span>
+                                      {dayData.status && dayData.status !== 'present' && dayData.status !== 'dispensation' && (
+                                          <span className="text-[9px] font-bold uppercase mt-0.5 opacity-80">
+                                              {dayData.status === 'sick' ? 'Sakit' : dayData.status === 'permit' ? 'Izin' : 'Alpha'}
+                                          </span>
+                                      )}
+                                      
+                                      {/* Tooltip for reason */}
+                                      {dayData.reason && (
+                                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none shadow-xl">
+                                              <div className="font-bold mb-1 border-b border-gray-600 pb-1">Keterangan:</div>
+                                              <p className="line-clamp-3">{dayData.reason}</p>
+                                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></div>
+                                          </div>
+                                      )}
+                                  </div>
+                              );
+                          })}
+                      </div>
+                      
+                      <div className="mt-4 flex flex-wrap gap-3 justify-center text-xs">
+                          <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-emerald-50 border border-emerald-100 mr-1.5"></div><span className="text-gray-600">Hadir</span></div>
+                          <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-amber-100 border border-amber-200 mr-1.5"></div><span className="text-gray-600">Sakit</span></div>
+                          <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-blue-100 border border-blue-200 mr-1.5"></div><span className="text-gray-600">Izin</span></div>
+                          <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-red-100 border border-red-200 mr-1.5"></div><span className="text-gray-600">Alpha</span></div>
                       </div>
                   </div>
 
