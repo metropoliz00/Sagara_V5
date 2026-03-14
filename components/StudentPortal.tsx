@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Student, GradeRecord, LiaisonLog, AgendaItem, Material, BehaviorLog, PermissionRequest, KarakterAssessment, KARAKTER_INDICATORS, KarakterIndicatorKey, LearningDocumentation, BookLoan } from '../types';
-import { MOCK_SUBJECTS } from '../constants';
+import { MOCK_SUBJECTS, CALENDAR_CODES } from '../constants';
 import { 
   User, Calendar, Send, FileText, CheckCircle, XCircle, 
   BookOpen, LayoutDashboard, Clock,
@@ -46,6 +46,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
   const [showRecapReport, setShowRecapReport] = useState(false);
   const [showSummative, setShowSummative] = useState(false);
   const [kktpMap, setKktpMap] = useState<Record<string, number>>({});
+  const [academicCalendar, setAcademicCalendar] = useState<any>({});
 
   // -- STATES FOR FORMS --
   const [permissionForm, setPermissionForm] = useState({
@@ -146,6 +147,10 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
                           });
                       }
                       setKktpMap(finalKktp);
+                      
+                      if (config.academicCalendar) {
+                          setAcademicCalendar(config.academicCalendar);
+                      }
                   }
               } catch (e) {
                   console.error("Failed to load class config for student");
@@ -455,6 +460,9 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
       
+      const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+      const monthCalendarData = academicCalendar?.[monthKey] || [];
+      
       const days = [];
       // Pad start (0 = Sunday, 1 = Monday, etc.)
       for (let i = 0; i < firstDay.getDay(); i++) {
@@ -464,15 +472,33 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
       for (let i = 1; i <= lastDay.getDate(); i++) {
           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
           const record = allAttendance.find((r: any) => String(r.studentId) === String(student.id) && r.date === dateStr);
+          
+          let holidayCode = null;
+          let holidayLabel = null;
+          let isSunday = new Date(year, month, i).getDay() === 0;
+          
+          if (monthCalendarData[i - 1]) {
+              const code = monthCalendarData[i - 1];
+              if (CALENDAR_CODES[code]) {
+                  holidayCode = code;
+                  holidayLabel = CALENDAR_CODES[code].label;
+              }
+          } else if (isSunday) {
+              holidayCode = 'LU';
+              holidayLabel = 'Libur Akhir Pekan';
+          }
+          
           days.push({
               day: i,
               dateStr,
               status: record ? record.status : null,
-              reason: record ? record.reason : null
+              reason: record ? record.reason : null,
+              holidayCode,
+              holidayLabel
           });
       }
       return days;
-  }, [calendarMonth, allAttendance, student.id]);
+  }, [calendarMonth, allAttendance, student.id, academicCalendar]);
 
   const prevMonth = () => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1));
   const nextMonth = () => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1));
@@ -1016,6 +1042,12 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
                               let textColor = 'text-gray-700';
                               let borderColor = 'border-gray-100';
                               
+                              if (dayData.holidayCode) {
+                                  bgColor = 'bg-red-50 hover:bg-red-100';
+                                  textColor = 'text-red-700';
+                                  borderColor = 'border-red-200';
+                              }
+                              
                               if (dayData.status === 'sick') {
                                   bgColor = 'bg-amber-100';
                                   textColor = 'text-amber-800';
@@ -1047,12 +1079,17 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
                                               {dayData.status === 'sick' ? 'Sakit' : dayData.status === 'permit' ? 'Izin' : 'Alpha'}
                                           </span>
                                       )}
+                                      {!dayData.status && dayData.holidayCode && (
+                                          <span className="text-[9px] font-bold uppercase mt-0.5 opacity-80 text-red-600 truncate w-full text-center px-1">
+                                              Libur
+                                          </span>
+                                      )}
                                       
-                                      {/* Tooltip for reason */}
-                                      {dayData.reason && (
+                                      {/* Tooltip for reason or holiday */}
+                                      {(dayData.reason || dayData.holidayLabel) && (
                                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none shadow-xl">
                                               <div className="font-bold mb-1 border-b border-gray-600 pb-1">Keterangan:</div>
-                                              <p className="line-clamp-3">{dayData.reason}</p>
+                                              <p className="line-clamp-3">{dayData.reason || dayData.holidayLabel}</p>
                                               <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></div>
                                           </div>
                                       )}
@@ -1065,7 +1102,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
                           <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-emerald-50 border border-emerald-100 mr-1.5"></div><span className="text-gray-600">Hadir</span></div>
                           <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-amber-100 border border-amber-200 mr-1.5"></div><span className="text-gray-600">Sakit</span></div>
                           <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-blue-100 border border-blue-200 mr-1.5"></div><span className="text-gray-600">Izin</span></div>
-                          <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-red-100 border border-red-200 mr-1.5"></div><span className="text-gray-600">Alpha</span></div>
+                          <div className="flex items-center"><div className="w-3 h-3 rounded-full bg-red-100 border border-red-200 mr-1.5"></div><span className="text-gray-600">Alpha / Libur</span></div>
                       </div>
                   </div>
 
