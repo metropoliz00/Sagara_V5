@@ -1066,7 +1066,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
                       ) : (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {materials
-                                .filter(m => m.classId === student.classId)
+                                .filter(m => m.classId === student.classId && m.isVisible)
                                 .map((material) => {
                                   const subject = MOCK_SUBJECTS.find(s => s.id === material.subjectId);
                                   return (

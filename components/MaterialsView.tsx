@@ -36,7 +36,7 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
   });
 
   const isTeacher = currentUser?.role === 'guru' || currentUser?.role === 'admin';
-  console.log("CurrentUser:", currentUser, "isTeacher:", isTeacher);
+  console.log("MaterialsView RENDER - CurrentUser:", currentUser, "isTeacher:", isTeacher);
 
   useEffect(() => {
     if (editingMaterial) {
