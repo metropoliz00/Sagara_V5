@@ -50,7 +50,7 @@ const menuGroups = [
       { id: 'jurnal-pembelajaran', label: 'Jurnal Pembelajaran', icon: NotebookPen, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'laporan-pembelajaran', label: 'Laporan Pembelajaran', icon: FileText, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'dokumentasi-pembelajaran', label: 'Dokumentasi Pembelajaran', icon: Camera, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'kegiatan', label: 'Kegiatan & Ekskul', icon: Tent, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'kegiatan', label: 'Ekstrakurikuler', icon: Tent, roles: ['admin', 'guru', 'supervisor'] },
     ]
   },
   {
