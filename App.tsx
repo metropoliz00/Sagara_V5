@@ -892,7 +892,28 @@ const AppContent: React.FC = () => {
   };
   
   // Holidays & Assessments
-  const handleAddHoliday = async (holidaysToAdd: Omit<Holiday, 'id'>[]) => { if (isDemoMode) { const newHolidays = holidaysToAdd.map(h => ({ ...h, id: Date.now().toString() + Math.random() })); setHolidays(prev => [...prev, ...newHolidays].sort((a,b) => a.date.localeCompare(b.date))); handleShowNotification("Hari libur berhasil ditambahkan (Demo).", "success"); return; } try { await apiService.saveHolidayBatch(holidaysToAdd); handleShowNotification("Hari libur berhasil disimpan!", "success"); await fetchData(); } catch (e) { handleShowNotification("Gagal menyimpan hari libur.", "error"); } };
+  const handleAddHoliday = async (holidaysToAdd: Omit<Holiday, 'id'>[]) => { 
+    if (isDemoMode) { 
+      const newHolidays = holidaysToAdd.map(h => ({ ...h, id: Date.now().toString() + Math.random() })); 
+      setHolidays(prev => {
+        // Remove existing holidays with the same date and classId
+        const filteredPrev = prev.filter(h => 
+          !newHolidays.some(newH => newH.date === h.date && newH.classId === h.classId)
+        );
+        
+        return [...filteredPrev, ...newHolidays].sort((a,b) => a.date.localeCompare(b.date));
+      }); 
+      handleShowNotification("Hari libur berhasil ditambahkan (Demo).", "success"); 
+      return; 
+    } 
+    try { 
+      await apiService.saveHolidayBatch(holidaysToAdd); 
+      handleShowNotification("Hari libur berhasil disimpan!", "success"); 
+      await fetchData(); 
+    } catch (e) { 
+      handleShowNotification("Gagal menyimpan hari libur.", "error"); 
+    } 
+  };
   const handleUpdateHoliday = async (updatedHoliday: Holiday) => { if (isDemoMode) { setHolidays(prev => prev.map(h => h.id === updatedHoliday.id ? updatedHoliday : h).sort((a,b) => a.date.localeCompare(b.date))); handleShowNotification("Hari libur diperbarui (Demo).", "success"); return; } try { await apiService.updateHoliday(updatedHoliday); handleShowNotification("Hari libur berhasil diperbarui.", "success"); await fetchData(); } catch(e) { handleShowNotification("Gagal memperbarui hari libur.", "error"); } };
   const handleDeleteHoliday = async (id: string) => { showConfirm('Hapus hari libur ini?', async () => { if (isDemoMode) { setHolidays(prev => prev.filter(h => h.id !== id)); handleShowNotification("Hari libur dihapus (Demo).", "success"); return; } try { await apiService.deleteHoliday(id); handleShowNotification("Hari libur berhasil dihapus.", "success"); await fetchData(); } catch (e) { handleShowNotification("Gagal menghapus hari libur.", "error"); } }); };
   const handleSaveSikap = async (studentId: string, assessment: Omit<SikapAssessment, 'studentId' | 'classId'>) => { setSikapAssessments(prev => { const existing = prev.find(a => String(a.studentId).trim() === String(studentId).trim()); if (existing) return prev.map(a => String(a.studentId).trim() === String(studentId).trim() ? { ...existing, ...assessment } : a); return [...prev, { studentId, classId: activeClassId, ...assessment }]; }); if (!isDemoMode) await apiService.saveSikapAssessment(studentId, activeClassId, assessment); };

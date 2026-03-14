@@ -648,12 +648,28 @@ export const apiService = {
     return data.map((h: any) => ({ ...h, classId: h.class_id }));
   },
   saveHolidayBatch: async (holidays: Omit<Holiday, 'id'>[]): Promise<void> => {
+    if (holidays.length === 0) return;
+
     const dbHolidays = holidays.map(h => ({
       class_id: h.classId,
       date: h.date,
       description: h.description,
       type: h.type
     }));
+
+    // Extract unique dates and class_ids to delete existing ones
+    const dates = [...new Set(holidays.map(h => h.date))];
+    const classIds = [...new Set(holidays.map(h => h.classId))];
+
+    // Delete existing holidays for these dates and class_ids to prevent duplicates
+    if (dates.length > 0 && classIds.length > 0) {
+      await supabase
+        .from('holidays')
+        .delete()
+        .in('date', dates)
+        .in('class_id', classIds);
+    }
+
     await supabase.from('holidays').insert(dbHolidays);
   },
   updateHoliday: async (holiday: Holiday): Promise<void> => {
