@@ -28,6 +28,7 @@ import SchoolAssetsAdmin from './components/SchoolAssetsAdmin';
 import BOSManagement from './components/BOSManagement'; // NEW IMPORT
 import BookLoanView from './components/BookLoanView';
 import GraduatesView from './components/GraduatesView';
+import AgendaView from './components/AgendaView';
 import CustomModal from './components/CustomModal'; 
 import PaperPlaneIcon from './components/PaperPlaneIcon';
 import { ViewState, Student, AgendaItem, Extracurricular, BehaviorLog, GradeRecord, TeacherProfileData, SchoolProfileData, User, Holiday, SikapAssessment, KarakterAssessment, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, LearningJournalEntry, SupportDocument, InventoryItem, SchoolAsset, BOSTransaction, LearningDocumentation, BookLoan, BookInventory } from './types';
@@ -70,6 +71,7 @@ const AppContent: React.FC = () => {
       'siswa': 'Data Siswa',
       'data-lulusan': 'Data Lulusan',
       'absensi': 'Absensi',
+      'agenda': 'Agenda Kelas',
       'nilai': 'Nilai & Rapor',
       'administrasi/kelas': 'Administrasi Kelas',
       'konseling': 'Konseling & Pelanggaran',
@@ -650,6 +652,23 @@ const AppContent: React.FC = () => {
       setAgendas(oldAgendas);
       cacheService.set('agendas', oldAgendas);
       handleShowNotification('Gagal menyimpan agenda.', 'error');
+    }
+  };
+  const handleUpdateAgenda = async (updatedItem: AgendaItem) => {
+    const oldAgendas = agendas;
+    const newAgendas = oldAgendas.map(item => item.id === updatedItem.id ? updatedItem : item);
+    setAgendas(newAgendas);
+    cacheService.set('agendas', newAgendas);
+
+    if (isDemoMode) return;
+
+    try {
+      await apiService.updateAgenda(updatedItem);
+      handleShowNotification('Agenda berhasil diperbarui.', 'success');
+    } catch (error) {
+      setAgendas(oldAgendas);
+      cacheService.set('agendas', oldAgendas);
+      handleShowNotification('Gagal memperbarui agenda.', 'error');
     }
   };
   const handleToggleAgenda = async (id: string) => {
@@ -1737,6 +1756,17 @@ const AppContent: React.FC = () => {
                         userRole={currentUser?.role}
                     />
                 } />
+                <Route path="/agenda" element={
+                    <AgendaView 
+                        agendas={filteredAgendas}
+                        onAddAgenda={handleAddAgenda}
+                        onUpdateAgenda={handleUpdateAgenda}
+                        onToggleAgenda={handleToggleAgenda}
+                        onDeleteAgenda={handleDeleteAgenda}
+                        onShowNotification={handleShowNotification}
+                        classId={activeClassId}
+                    />
+                } />
                 <Route path="/nilai" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <GradesView 
@@ -1830,6 +1860,7 @@ const AppContent: React.FC = () => {
                         agendas={filteredAgendas}
                         extracurriculars={filteredExtracurriculars}
                         onAddAgenda={handleAddAgenda}
+                        onUpdateAgenda={handleUpdateAgenda}
                         onToggleAgenda={handleToggleAgenda}
                         onDeleteAgenda={handleDeleteAgenda}
                         onUpdateExtracurricular={handleUpdateExtracurricular}

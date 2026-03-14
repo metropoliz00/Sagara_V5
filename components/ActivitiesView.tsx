@@ -9,12 +9,14 @@ import {
   Search, UserPlus, BookOpen, Monitor, AlertCircle
 } from 'lucide-react';
 import CustomModal from './CustomModal';
+import AgendaView from './AgendaView';
 
 interface ActivitiesViewProps {
   students: Student[];
   agendas: AgendaItem[];
   extracurriculars?: Extracurricular[];
   onAddAgenda: (item: AgendaItem) => void;
+  onUpdateAgenda: (item: AgendaItem) => void;
   onToggleAgenda: (id: string) => void;
   onDeleteAgenda: (id: string) => void;
   onUpdateExtracurricular?: (item: Extracurricular) => void;
@@ -42,7 +44,7 @@ const CATEGORY_OPTIONS = ['Wajib', 'Seni', 'Keagamaan', 'Olahraga', 'Teknologi']
 
 const ActivitiesView: React.FC<ActivitiesViewProps> = ({ 
   students, agendas, extracurriculars = [], 
-  onAddAgenda, onToggleAgenda, onDeleteAgenda, onUpdateExtracurricular, onAddExtracurricular,
+  onAddAgenda, onUpdateAgenda, onToggleAgenda, onDeleteAgenda, onUpdateExtracurricular, onAddExtracurricular,
   onShowNotification, classId
 }) => {
   const [activeTab, setActiveTab] = useState<ActivityType>('ekskul');
@@ -53,10 +55,6 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   // Modal State for confirmations
   const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, action: () => void, message: string}>({
       isOpen: false, action: () => {}, message: ''
-  });
-
-  const [newAgenda, setNewAgenda] = useState<{title: string; date: string; type: 'urgent'|'warning'|'info'}>({
-    title: '', date: '', type: 'info'
   });
 
   // --- MERGE LOGIC: Combine DB Data with Defaults ---
@@ -116,17 +114,6 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
       }).format(date);
     } catch (e) {
       return dateStr;
-    }
-  };
-
-  const submitAgenda = () => {
-    if (newAgenda.title && newAgenda.date) {
-      onAddAgenda({
-        id: Date.now().toString(),
-        classId, 
-        title: newAgenda.title, date: newAgenda.date, type: newAgenda.type, completed: false
-      });
-      setNewAgenda({ title: '', date: '', type: 'info' });
     }
   };
 
@@ -191,17 +178,6 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
       const newMembers = activity.members.filter(id => id !== studentId);
       onUpdateExtracurricular({ ...activity, members: newMembers });
       onShowNotification('Anggota dihapus dari ekskul.', 'success');
-  };
-
-  const handleDeleteAgendaClick = (id: string) => {
-      setConfirmModal({
-          isOpen: true,
-          message: "Hapus agenda ini?",
-          action: () => {
-              onDeleteAgenda(id);
-              setConfirmModal(prev => ({...prev, isOpen: false}));
-          }
-      });
   };
 
   const handlePrint = () => window.print();
@@ -366,27 +342,15 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         )}
 
         {activeTab === 'agenda' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:block">
-            <div className="bg-white p-6 rounded-2xl border border-[#CAF4FF] shadow-sm h-fit no-print">
-                <h3 className="font-bold text-gray-800 mb-4">Tambah Agenda</h3>
-                <div className="space-y-4">
-                    <input className="w-full border p-2 rounded-lg" placeholder="Judul" value={newAgenda.title} onChange={e=>setNewAgenda({...newAgenda, title:e.target.value})}/>
-                    <input type="date" className="w-full border p-2 rounded-lg" value={newAgenda.date} onChange={e=>setNewAgenda({...newAgenda, date:e.target.value})}/>
-                    <div className="flex gap-2">{['info','warning','urgent'].map(t => <button key={t} onClick={()=>setNewAgenda({...newAgenda, type:t as any})} className={`flex-1 py-1 rounded border capitalize ${newAgenda.type===t?'bg-[#CAF4FF] font-bold':''}`}>{t}</button>)}</div>
-                    <button onClick={submitAgenda} className="w-full bg-[#5AB2FF] text-white font-bold py-2 rounded-lg hover:bg-[#A0DEFF]">Simpan</button>
-                </div>
-            </div>
-            <div className="lg:col-span-2 space-y-3 print:w-full">
-                <div className="hidden print-only text-center mb-6"><h2 className="text-xl font-bold uppercase">AGENDA KELAS</h2></div>
-                {agendas.map((item, index) => (
-                    <div key={item.id} className={`flex items-center p-4 rounded-xl border border-gray-100 shadow-sm print:border-black print:mb-2 ${index % 2 === 0 ? 'bg-white' : 'bg-[#CAF4FF]/20'}`}>
-                        <button onClick={() => onToggleAgenda(item.id)} className={`mr-4 ${item.completed ? 'text-emerald-500' : 'text-gray-300'} print:text-black`}><CheckCircle size={24} /></button>
-                        <div className="flex-1"><h4 className={`font-bold text-gray-800 print:text-black ${item.completed ? 'line-through text-gray-400' : ''}`}>{item.title}</h4><p className="text-xs text-gray-500 print:text-black">{formatLongDate(item.date)}</p></div>
-                        <button onClick={() => handleDeleteAgendaClick(item.id)} className="text-gray-300 hover:text-red-500 no-print"><Trash2/></button>
-                    </div>
-                ))}
-            </div>
-            </div>
+            <AgendaView 
+                agendas={agendas}
+                onAddAgenda={onAddAgenda}
+                onUpdateAgenda={onUpdateAgenda}
+                onToggleAgenda={onToggleAgenda}
+                onDeleteAgenda={onDeleteAgenda}
+                onShowNotification={onShowNotification}
+                classId={classId}
+            />
         )}
       </div>
 

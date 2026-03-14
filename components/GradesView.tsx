@@ -442,23 +442,57 @@ const GradesView: React.FC<GradesViewProps> = ({
         const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
         const rows = data.slice(1) as any[]; 
         let updateCount = 0;
-        rows.forEach((row) => {
-          if (!row || row.length === 0) return;
-          const nis = row[0] ? String(row[0]) : '';
-          const student = students.find(s => s.nis === nis);
-          if (student) {
-              const newData = {
-                  sum1: Number(row[3]) || 0,
-                  sum2: Number(row[4]) || 0,
-                  sum3: Number(row[5]) || 0,
-                  sum4: Number(row[6]) || 0,
-                  sas: Number(row[7]) || 0,
-              };
-              onSave(student.id, selectedSubject, newData, classId);
-              updateCount++;
-          }
-        });
-        onShowNotification(`Berhasil memproses impor untuk ${updateCount} siswa. Data sedang disimpan...`, 'success');
+
+        if (viewMode === 'recap') {
+            // Mass Import for all subjects
+            const headers = data[0] as string[];
+            // Find column indices for subjects
+            const subjectCols: {id: string, index: number}[] = [];
+            MOCK_SUBJECTS.forEach(subj => {
+                const idx = headers.findIndex(h => h && (h.toLowerCase() === subj.name.toLowerCase() || h.toLowerCase() === subj.id.toLowerCase()));
+                if (idx !== -1) subjectCols.push({ id: subj.id, index: idx });
+            });
+
+            const nisIdx = headers.findIndex(h => h && h.toLowerCase().includes('nis') && !h.toLowerCase().includes('nisn'));
+
+            rows.forEach((row) => {
+                if (!row || row.length === 0) return;
+                const nis = row[nisIdx] ? String(row[nisIdx]) : '';
+                const student = students.find(s => s.nis === nis);
+                if (student) {
+                    subjectCols.forEach(sc => {
+                        const score = Number(row[sc.index]);
+                        if (!isNaN(score) && score > 0) {
+                            // For rekap import, we set it as the SAS score (final)
+                            const newData = { sum1: 0, sum2: 0, sum3: 0, sum4: 0, sas: score };
+                            onSave(student.id, sc.id, newData, classId);
+                        }
+                    });
+                    updateCount++;
+                }
+            });
+            onShowNotification(`Berhasil memproses impor rekap untuk ${updateCount} siswa.`, 'success');
+        } else {
+            // Single subject import
+            rows.forEach((row) => {
+              if (!row || row.length === 0) return;
+              const nis = row[0] ? String(row[0]) : '';
+              const student = students.find(s => s.nis === nis);
+              if (student) {
+                  const newData = {
+                      sum1: Number(row[3]) || 0,
+                      sum2: Number(row[4]) || 0,
+                      sum3: Number(row[5]) || 0,
+                      sum4: Number(row[6]) || 0,
+                      sas: Number(row[7]) || 0,
+                  };
+                  onSave(student.id, selectedSubject, newData, classId);
+                  updateCount++;
+              }
+            });
+            onShowNotification(`Berhasil memproses impor untuk ${updateCount} siswa. Data sedang disimpan...`, 'success');
+        }
+        
         if(fileInputRef.current) fileInputRef.current.value = '';
       };
       reader.readAsBinaryString(file);
@@ -582,11 +616,13 @@ const GradesView: React.FC<GradesViewProps> = ({
               )}
 
               <div className="flex gap-1">
-                {isSubjectEditable && viewMode === 'input' && (
+                {!isReadOnly && (
                     <>
                         <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx, .xls, .csv" />
-                        <button onClick={handleDownloadTemplate} className="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50" title="Download Template"><FileSpreadsheet size={18}/></button>
-                        <button onClick={handleImportClick} className="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50" title="Import Excel"><Upload size={18}/></button>
+                        {viewMode === 'input' && isSubjectEditable && (
+                            <button onClick={handleDownloadTemplate} className="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50" title="Download Template"><FileSpreadsheet size={18}/></button>
+                        )}
+                        <button onClick={handleImportClick} className="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50" title={viewMode === 'recap' ? "Import Massal Rekap" : "Import Excel"}><Upload size={18}/></button>
                         <button onClick={handleExport} className="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50" title="Export Excel"><Download size={18}/></button>
                     </>
                 )}

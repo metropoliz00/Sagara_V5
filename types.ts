@@ -378,6 +378,7 @@ export type ViewState =
   | 'siswa' 
   | 'data-lulusan'
   | 'absensi' 
+  | 'agenda'
   | 'nilai' 
   | 'administrasi/kelas' 
   | 'konseling' 

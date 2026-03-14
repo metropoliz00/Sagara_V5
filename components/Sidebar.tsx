@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, CalendarCheck, GraduationCap, School, LogOut, X, ChevronRight, ChevronLeft,
   UserCog, HeartHandshake, Tent, BookText, Smile, Link2, FileText, Contact, BookOpen, 
   UserCheck, Database, NotebookPen, Files, Activity, Building, Wallet, Camera, Book,
-  Star, FolderOpen, BookOpenCheck, UsersRound, Briefcase, Settings, Award
+  Star, FolderOpen, BookOpenCheck, UsersRound, Briefcase, Settings, Award, ListTodo
 } from 'lucide-react';
 import { ViewState, User } from '../types';
 
@@ -44,6 +44,7 @@ const menuGroups = [
     icon: BookOpenCheck,
     items: [
       { id: 'absensi', label: 'Absensi', icon: CalendarCheck, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'agenda', label: 'Agenda', icon: ListTodo, roles: ['admin', 'guru', 'supervisor', 'siswa'] },
       { id: 'nilai', label: 'Nilai & Rapor', icon: GraduationCap, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'sikap', label: 'DPL & 7KAIH', icon: Smile, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'jurnal-pembelajaran', label: 'Jurnal Pembelajaran', icon: NotebookPen, roles: ['admin', 'guru', 'supervisor'] },
