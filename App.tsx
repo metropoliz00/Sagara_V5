@@ -736,6 +736,7 @@ const AppContent: React.FC = () => {
   };
 
   const handleUpdateMaterial = async (updatedMaterial: Material) => {
+    console.log("Updating material:", updatedMaterial);
     if (isDemoMode) {
       const newMaterials = materials.map(m => m.id === updatedMaterial.id ? updatedMaterial : m);
       setMaterials(newMaterials);
@@ -746,9 +747,11 @@ const AppContent: React.FC = () => {
     try {
       await apiService.updateMaterial(updatedMaterial);
       const updatedMaterials = await apiService.getMaterials(activeClassId);
+      console.log("Materials updated, fetched new list:", updatedMaterials);
       setMaterials(updatedMaterials);
       cacheService.set('materials', updatedMaterials);
     } catch (error) {
+      console.error("Error updating material:", error);
       handleShowNotification('Gagal memperbarui materi.', 'error');
     }
   };
