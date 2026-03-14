@@ -494,7 +494,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
               const code = monthCalendarData[i - 1];
               if (CALENDAR_CODES[code]) {
                   holidayCode = code;
-                  const specificDescription = HOLIDAY_DESCRIPTIONS_2025_2026[dateStr];
+                  const specificDescription = academicCalendar?.__descriptions__?.[dateStr] || HOLIDAY_DESCRIPTIONS_2025_2026[dateStr];
                   holidayLabel = specificDescription || CALENDAR_CODES[code].label;
               }
           } else if (isSunday) {

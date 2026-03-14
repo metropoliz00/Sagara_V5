@@ -282,7 +282,8 @@ export interface SchoolProfileData {
 }
 
 export interface AcademicCalendarData {
-  [yearMonth: string]: (string | null)[];
+  __descriptions__?: { [date: string]: string };
+  [yearMonth: string]: any;
 }
 
 export interface OrganizationStructure {

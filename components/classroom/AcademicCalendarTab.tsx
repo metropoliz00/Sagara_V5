@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AcademicCalendarData, Holiday } from '../../types';
 import { Calendar, Save, Loader2, RefreshCw, AlertTriangle, X, Lock } from 'lucide-react';
 import { CALENDAR_CODES, PREFILLED_CALENDAR_2025, HOLIDAY_DESCRIPTIONS_2025_2026 } from '../../constants';
@@ -83,15 +83,16 @@ const AcademicCalendarTab: React.FC<AcademicCalendarTabProps> = ({ initialData, 
       const newHolidays: Omit<Holiday, 'id'>[] = [];
       
       for (const yearMonthKey in localData) {
+          if (yearMonthKey === '__descriptions__') continue;
           const [year, month] = yearMonthKey.split('-').map(Number);
           const dayContents = localData[yearMonthKey];
           
-          dayContents.forEach((content, index) => {
+          dayContents.forEach((content: any, index: number) => {
               const day = index + 1;
               // FILTER UPDATE: Exclude 'LU' (Libur Umum/Minggu) from being synced to database
               if (content && HOLIDAY_CODES.includes(content) && content !== 'LU') {
                   const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                  const specificDescription = HOLIDAY_DESCRIPTIONS_2025_2026[date];
+                  const specificDescription = localData.__descriptions__?.[date] || HOLIDAY_DESCRIPTIONS_2025_2026[date];
                   const codeInfo = CALENDAR_CODES[content];
                   
                   newHolidays.push({
@@ -113,6 +114,40 @@ const AcademicCalendarTab: React.FC<AcademicCalendarTabProps> = ({ initialData, 
           setIsSyncing(false);
       }
   };
+
+  const handleDescriptionChange = (date: string, description: string) => {
+      setLocalData(prev => ({
+          ...prev,
+          __descriptions__: {
+              ...(prev.__descriptions__ || {}),
+              [date]: description
+          }
+      }));
+  };
+
+  const holidayDates = useMemo(() => {
+      const dates: { date: string, code: string, defaultDesc: string, customDesc?: string }[] = [];
+      for (const yearMonthKey in localData) {
+          if (yearMonthKey === '__descriptions__') continue;
+          const [year, month] = yearMonthKey.split('-').map(Number);
+          const dayContents = localData[yearMonthKey] as (string | null)[];
+          if (!dayContents) continue;
+          
+          dayContents.forEach((content, index) => {
+              const day = index + 1;
+              if (content && HOLIDAY_CODES.includes(content) && content !== 'LU') {
+                  const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  dates.push({
+                      date,
+                      code: content,
+                      defaultDesc: HOLIDAY_DESCRIPTIONS_2025_2026[date] || CALENDAR_CODES[content]?.label || '',
+                      customDesc: localData.__descriptions__?.[date]
+                  });
+              }
+          });
+      }
+      return dates.sort((a, b) => a.date.localeCompare(b.date));
+  }, [localData]);
 
   return (
     <div className="flex flex-col xl:flex-row gap-6">
@@ -155,7 +190,7 @@ const AcademicCalendarTab: React.FC<AcademicCalendarTabProps> = ({ initialData, 
                                     const content = monthData[day - 1] || '';
                                     const codeInfo = CALENDAR_CODES[content];
                                     const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                    const specificDescription = HOLIDAY_DESCRIPTIONS_2025_2026[dateString];
+                                    const specificDescription = localData.__descriptions__?.[dateString] || HOLIDAY_DESCRIPTIONS_2025_2026[dateString];
                                     let tooltipText = '';
                                     if (codeInfo) {
                                         tooltipText = specificDescription || codeInfo.label;
@@ -180,6 +215,32 @@ const AcademicCalendarTab: React.FC<AcademicCalendarTabProps> = ({ initialData, 
                     })}
                 </tbody>
             </table>
+
+            {holidayDates.length > 0 && (
+                <div className="mt-8 no-print">
+                    <h3 className="font-bold text-gray-800 mb-4 border-b pb-2">Edit Keterangan Libur</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {holidayDates.map((hd, idx) => (
+                            <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="font-semibold text-sm text-gray-700">{hd.date}</span>
+                                    <span className={`text-xs px-2 py-1 rounded-full font-bold ${CALENDAR_CODES[hd.code]?.color || 'bg-gray-200 text-gray-700'}`}>
+                                        {hd.code}
+                                    </span>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={hd.customDesc !== undefined ? hd.customDesc : ''}
+                                    onChange={(e) => handleDescriptionChange(hd.date, e.target.value)}
+                                    placeholder={hd.defaultDesc}
+                                    className="w-full p-2 text-sm border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    disabled={isReadOnly}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
         <div className="xl:w-72 shrink-0 space-y-4 no-print">
             <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
