@@ -36,6 +36,7 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
   });
 
   const isTeacher = currentUser?.role === 'guru' || currentUser?.role === 'admin';
+  console.log("CurrentUser:", currentUser, "isTeacher:", isTeacher);
 
   useEffect(() => {
     if (editingMaterial) {
@@ -62,6 +63,7 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
                          (m.description?.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesSubject = selectedSubject === 'all' || m.subjectId === selectedSubject;
     const isVisibleToStudent = isTeacher || m.isVisible;
+    console.log(`Material: ${m.title}, isVisible: ${m.isVisible}, isTeacher: ${isTeacher}, show: ${matchesSearch && matchesSubject && isVisibleToStudent}`);
     return matchesSearch && matchesSubject && isVisibleToStudent;
   });
 
