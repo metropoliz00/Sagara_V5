@@ -4,7 +4,7 @@ import SupervisorOverview from './SupervisorOverview';
 import Dashboard from './Dashboard';
 import { AlertCircle } from 'lucide-react';
 import { 
-    ViewState, Student, AgendaItem, BehaviorLog, GradeRecord, 
+    ViewState, Student, AgendaItem, BehaviorLog, GradeRecord, Material,
     TeacherProfileData, SchoolProfileData, User, Holiday, KarakterAssessment, 
     EmploymentLink, LiaisonLog, PermissionRequest, InventoryItem, SchoolAsset, BOSTransaction, Extracurricular, LearningDocumentation, BookLoan,
     Subject, LearningReport
@@ -49,6 +49,7 @@ interface DashboardContainerProps {
   bookLoans: BookLoan[];
   kktpMap?: Record<string, number>;
   subjects: Subject[];
+  materials?: Material[];
 }
 
 const DashboardContainer: React.FC<DashboardContainerProps> = ({
@@ -88,7 +89,8 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({
   unreadMessageCount = 0,
   bookLoans,
   kktpMap,
-  subjects
+  subjects,
+  materials = []
 }) => {
   if (isStudentRole) {
     if (!myStudentData) {
@@ -119,6 +121,7 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({
         onUpdateStudent={onUpdateStudent}
         learningDocumentation={learningDocumentation || []}
         bookLoans={bookLoans.filter(loan => loan.studentId === myStudentData?.id)}
+        materials={materials}
       />
     );
   }

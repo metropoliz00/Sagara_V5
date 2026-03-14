@@ -29,9 +29,10 @@ import BOSManagement from './components/BOSManagement'; // NEW IMPORT
 import BookLoanView from './components/BookLoanView';
 import GraduatesView from './components/GraduatesView';
 import AgendaView from './components/AgendaView';
+import MaterialsView from './components/MaterialsView';
 import CustomModal from './components/CustomModal'; 
 import PaperPlaneIcon from './components/PaperPlaneIcon';
-import { ViewState, Student, AgendaItem, Extracurricular, BehaviorLog, GradeRecord, TeacherProfileData, SchoolProfileData, User, Holiday, SikapAssessment, KarakterAssessment, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, LearningJournalEntry, SupportDocument, InventoryItem, SchoolAsset, BOSTransaction, LearningDocumentation, BookLoan, BookInventory } from './types';
+import { ViewState, Student, AgendaItem, Material, Extracurricular, BehaviorLog, GradeRecord, TeacherProfileData, SchoolProfileData, User, Holiday, SikapAssessment, KarakterAssessment, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, LearningJournalEntry, SupportDocument, InventoryItem, SchoolAsset, BOSTransaction, LearningDocumentation, BookLoan, BookInventory } from './types';
 import { MOCK_SUBJECTS, MOCK_STUDENTS, MOCK_EXTRACURRICULARS } from './constants';
 import { apiService } from './services/apiService';
 import { cacheService } from './src/services/cacheService';
@@ -72,6 +73,7 @@ const AppContent: React.FC = () => {
       'data-lulusan': 'Data Lulusan',
       'absensi': 'Absensi',
       'agenda': 'Agenda Kelas',
+      'materi': 'Materi Pembelajaran',
       'nilai': 'Nilai & Rapor',
       'administrasi/kelas': 'Administrasi Kelas',
       'konseling': 'Konseling & Pelanggaran',
@@ -111,6 +113,7 @@ const AppContent: React.FC = () => {
   const [users, setUsers] = useState<User[]>(() => cacheService.get<User[]>('users') || []);
   const [students, setStudents] = useState<Student[]>(() => cacheService.get<Student[]>('students') || []);
   const [agendas, setAgendas] = useState<AgendaItem[]>(() => cacheService.get<AgendaItem[]>('agendas') || []);
+  const [materials, setMaterials] = useState<Material[]>(() => cacheService.get<Material[]>('materials') || []);
   const [extracurriculars, setExtracurriculars] = useState<Extracurricular[]>(() => cacheService.get<Extracurricular[]>('extracurriculars') || []);
   const [counselingLogs, setCounselingLogs] = useState<BehaviorLog[]>(() => cacheService.get<BehaviorLog[]>('counselingLogs') || []);
   const [grades, setGrades] = useState<GradeRecord[]>(() => cacheService.get<GradeRecord[]>('grades') || []);
@@ -706,6 +709,67 @@ const AppContent: React.FC = () => {
       });
     });
   };
+
+  // Materials
+  const handleAddMaterial = async (newMaterial: Omit<Material, 'id' | 'createdAt'>) => {
+    if (isDemoMode) {
+      const optimisticId = `material-${Date.now()}`;
+      const materialWithId: Material = { 
+        ...newMaterial, 
+        id: optimisticId, 
+        createdAt: new Date().toISOString() 
+      };
+      const newMaterials = [materialWithId, ...materials];
+      setMaterials(newMaterials);
+      cacheService.set('materials', newMaterials);
+      return;
+    }
+
+    try {
+      await apiService.createMaterial(newMaterial);
+      const updatedMaterials = await apiService.getMaterials(activeClassId);
+      setMaterials(updatedMaterials);
+      cacheService.set('materials', updatedMaterials);
+    } catch (error) {
+      handleShowNotification('Gagal menambahkan materi.', 'error');
+    }
+  };
+
+  const handleUpdateMaterial = async (updatedMaterial: Material) => {
+    if (isDemoMode) {
+      const newMaterials = materials.map(m => m.id === updatedMaterial.id ? updatedMaterial : m);
+      setMaterials(newMaterials);
+      cacheService.set('materials', newMaterials);
+      return;
+    }
+
+    try {
+      await apiService.updateMaterial(updatedMaterial);
+      const updatedMaterials = await apiService.getMaterials(activeClassId);
+      setMaterials(updatedMaterials);
+      cacheService.set('materials', updatedMaterials);
+    } catch (error) {
+      handleShowNotification('Gagal memperbarui materi.', 'error');
+    }
+  };
+
+  const handleDeleteMaterial = async (id: string) => {
+    if (isDemoMode) {
+      const newMaterials = materials.filter(m => m.id !== id);
+      setMaterials(newMaterials);
+      cacheService.set('materials', newMaterials);
+      return;
+    }
+
+    try {
+      await apiService.deleteMaterial(id);
+      const updatedMaterials = await apiService.getMaterials(activeClassId);
+      setMaterials(updatedMaterials);
+      cacheService.set('materials', updatedMaterials);
+    } catch (error) {
+      handleShowNotification('Gagal menghapus materi.', 'error');
+    }
+  };
   const handleAddExtracurricular = async (item: Extracurricular) => {
     const itemWithClass = { ...item, classId: activeClassId };
     const optimisticId = `extra-${Date.now()}`;
@@ -1247,6 +1311,7 @@ const AppContent: React.FC = () => {
         currentUser?.role === 'admin' || currentUser?.role === 'supervisor' ? apiService.getUsers(currentUser) : Promise.resolve([]),
         apiService.getStudents(currentUser),
         apiService.getAgendas(currentUser),
+        apiService.getMaterials(classIdToFetch),
         apiService.getGrades(currentUser),
         apiService.getCounselingLogs(currentUser),
         apiService.getExtracurriculars(currentUser),
@@ -1295,7 +1360,7 @@ const AppContent: React.FC = () => {
       })));
       
       const [
-          fUsers, fStudents, fAgendas, fGrades, fCounseling, fExtracurriculars, 
+          fUsers, fStudents, fAgendas, fMaterials, fGrades, fCounseling, fExtracurriculars, 
           fProfiles, fHolidays, fAttendance, fSikap, fKarakter, fLinks, fReports, 
           fLearningDocs, fLiaison, fPermissions, fSupportDocs, fBookLoans, fClassConfig, fInventory, fSchoolAssets, fBOS,
           _delay // Placeholder for minDelay
@@ -1304,6 +1369,7 @@ const AppContent: React.FC = () => {
       if (fUsers !== null) setUsers(Array.isArray(fUsers) ? fUsers as User[] : []);
       if (fStudents !== null) setStudents(Array.isArray(fStudents) ? fStudents as Student[] : []);
       if (fAgendas !== null) setAgendas(Array.isArray(fAgendas) ? (fAgendas as AgendaItem[]).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) : []);
+      if (fMaterials !== null) setMaterials(Array.isArray(fMaterials) ? fMaterials as Material[] : []);
       if (fGrades !== null) setGrades(Array.isArray(fGrades) ? fGrades as GradeRecord[] : []);
       if (fCounseling !== null) setCounselingLogs(Array.isArray(fCounseling) ? (fCounseling as BehaviorLog[]).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) : []);
       if (fHolidays !== null) setHolidays(Array.isArray(fHolidays) ? (fHolidays as Holiday[]).sort((a,b) => a.date.localeCompare(b.date)) : []);
@@ -1373,6 +1439,7 @@ const AppContent: React.FC = () => {
       if (fSchoolAssets !== null) cacheService.set('schoolAssets', fSchoolAssets as SchoolAsset[]);
       if (fBOS !== null) cacheService.set('bosTransactions', fBOS as BOSTransaction[]);
       if (fBookLoans !== null) cacheService.set('bookLoans', fBookLoans as BookLoan[]);
+      if (fMaterials !== null) cacheService.set('materials', fMaterials as Material[]);
       
       if (fExtracurriculars !== null) {
           setExtracurriculars(Array.isArray(fExtracurriculars) ? fExtracurriculars as Extracurricular[] : []);
@@ -1706,6 +1773,7 @@ const AppContent: React.FC = () => {
                         bookLoans={bookLoans}
                         subjects={MOCK_SUBJECTS}
                         kktpMap={kktpMap}
+                        materials={materials}
                     />
                 } />
                 <Route path="/dashboard" element={<Navigate to="/" replace />} />
@@ -1765,6 +1833,18 @@ const AppContent: React.FC = () => {
                         onDeleteAgenda={handleDeleteAgenda}
                         onShowNotification={handleShowNotification}
                         classId={activeClassId}
+                    />
+                } />
+                <Route path="/materi" element={
+                    <MaterialsView 
+                        materials={materials}
+                        subjects={MOCK_SUBJECTS}
+                        currentUser={currentUser}
+                        classId={activeClassId}
+                        onAddMaterial={handleAddMaterial}
+                        onUpdateMaterial={handleUpdateMaterial}
+                        onDeleteMaterial={handleDeleteMaterial}
+                        onShowNotification={handleShowNotification}
                     />
                 } />
                 <Route path="/nilai" element={

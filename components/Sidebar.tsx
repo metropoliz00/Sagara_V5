@@ -45,6 +45,7 @@ const menuGroups = [
     items: [
       { id: 'absensi', label: 'Absensi', icon: CalendarCheck, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'agenda', label: 'Agenda', icon: ListTodo, roles: ['admin', 'guru', 'supervisor', 'siswa'] },
+      { id: 'materi', label: 'Materi', icon: BookOpen, roles: ['admin', 'guru', 'supervisor', 'siswa'] },
       { id: 'nilai', label: 'Nilai & Rapor', icon: GraduationCap, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'sikap', label: 'DPL & 7KAIH', icon: Smile, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'jurnal-pembelajaran', label: 'Jurnal Pembelajaran', icon: NotebookPen, roles: ['admin', 'guru', 'supervisor'] },

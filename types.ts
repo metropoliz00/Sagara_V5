@@ -374,12 +374,23 @@ export interface Graduate {
   updatedAt?: number;
 }
 
+export interface Material {
+  id: string;
+  classId: string;
+  subjectId: string;
+  title: string;
+  description?: string;
+  link: string;
+  createdAt: string;
+}
+
 export type ViewState = 
   | 'dashboard' 
   | 'siswa' 
   | 'data-lulusan'
   | 'absensi' 
   | 'agenda'
+  | 'materi'
   | 'nilai' 
   | 'administrasi/kelas' 
   | 'konseling' 

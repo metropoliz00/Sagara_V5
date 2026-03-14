@@ -6,7 +6,7 @@ import {
   ScheduleItem, PiketGroup, SikapAssessment, KarakterAssessment, SeatingLayouts, 
   AcademicCalendarData, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, 
   LearningJournalEntry, SupportDocument, OrganizationStructure, SchoolAsset, 
-  BOSTransaction, LearningDocumentation, BookLoan, BookInventory, Graduate 
+  BOSTransaction, LearningDocumentation, BookLoan, BookInventory, Graduate, Material
 } from '../types';
 
 const isApiConfigured = () => {
@@ -425,6 +425,53 @@ export const apiService = {
   },
   deleteAgenda: async (id: string): Promise<void> => {
     await supabase.from('agendas').delete().eq('id', id);
+  },
+
+  // --- Materials ---
+  getMaterials: async (classId: string): Promise<Material[]> => {
+    const { data, error } = await supabase.from('materials').select('*').eq('class_id', classId);
+    if (error) return [];
+    return data.map((m: any) => ({
+      id: m.id,
+      classId: m.class_id,
+      subjectId: m.subject_id,
+      title: m.title,
+      description: m.description,
+      link: m.link,
+      createdAt: m.created_at
+    }));
+  },
+  createMaterial: async (material: Omit<Material, 'id' | 'createdAt'>): Promise<void> => {
+    const { error } = await supabase.from('materials').insert([{
+      class_id: material.classId,
+      subject_id: material.subjectId,
+      title: material.title,
+      description: material.description,
+      link: material.link
+    }]);
+    if (error) {
+      console.error("Error creating material:", error);
+      throw error;
+    }
+  },
+  updateMaterial: async (material: Material): Promise<void> => {
+    const { error } = await supabase.from('materials').update({
+      subject_id: material.subjectId,
+      title: material.title,
+      description: material.description,
+      link: material.link
+    }).eq('id', material.id);
+    if (error) {
+      console.error("Error updating material:", error);
+      throw error;
+    }
+  },
+  deleteMaterial: async (id: string): Promise<void> => {
+    const { error } = await supabase.from('materials').delete().eq('id', id);
+    if (error) {
+      console.error("Error deleting material:", error);
+      throw error;
+    }
   },
 
   // --- Grades ---

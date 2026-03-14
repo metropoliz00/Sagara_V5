@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Student, GradeRecord, LiaisonLog, AgendaItem, BehaviorLog, PermissionRequest, KarakterAssessment, KARAKTER_INDICATORS, KarakterIndicatorKey, LearningDocumentation, BookLoan } from '../types';
+import { Student, GradeRecord, LiaisonLog, AgendaItem, Material, BehaviorLog, PermissionRequest, KarakterAssessment, KARAKTER_INDICATORS, KarakterIndicatorKey, LearningDocumentation, BookLoan } from '../types';
 import { MOCK_SUBJECTS } from '../constants';
 import { 
   User, Calendar, Send, FileText, CheckCircle, XCircle, 
@@ -29,13 +29,14 @@ interface StudentPortalProps {
   onUpdateStudent: (student: Student) => Promise<void>;
   learningDocumentation?: LearningDocumentation[];
   bookLoans: BookLoan[];
+  materials?: Material[];
 }
 
-type PortalTab = 'dashboard' | 'attendance' | 'liaison' | 'profile' | 'character';
+type PortalTab = 'dashboard' | 'attendance' | 'liaison' | 'profile' | 'character' | 'materi';
 
 const StudentPortal: React.FC<StudentPortalProps> = ({
   student, allAttendance, grades, liaisonLogs, agendas, behaviorLogs, permissionRequests, karakterAssessments,
-  onSaveLiaison, onSavePermission, onSaveKarakter, onUpdateStudent, learningDocumentation = [], bookLoans = []
+  onSaveLiaison, onSavePermission, onSaveKarakter, onUpdateStudent, learningDocumentation = [], bookLoans = [], materials = []
 }) => {
   const [activeTab, setActiveTab] = useState<PortalTab>('dashboard');
   const { showAlert } = useModal();
@@ -448,6 +449,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
   const TABS = [
     { id: 'dashboard', label: 'Ringkasan', icon: LayoutDashboard },
     { id: 'attendance', label: 'Izin & Absensi', icon: Calendar },
+    { id: 'materi', label: 'Materi', icon: BookOpen },
     { id: 'liaison', label: 'Buku Penghubung', icon: MessageSquare },
     { id: 'profile', label: 'Profil Siswa', icon: User },
     { id: 'character', label: 'Karakter', icon: HeartHandshake },
@@ -1046,6 +1048,54 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
                   </div>
               </div>
           </div>
+          )}
+
+          {/* --- MATERI TAB --- */}
+          {activeTab === 'materi' && (
+              <div className="space-y-6">
+                  <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                      <h3 className="font-bold text-gray-800 flex items-center text-lg mb-6">
+                          <BookOpen size={20} className="mr-2 text-blue-500"/> Materi Pembelajaran
+                      </h3>
+                      
+                      {materials.length === 0 ? (
+                          <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+                              <BookOpen size={48} className="mx-auto text-gray-300 mb-4" />
+                              <p className="text-gray-500 font-medium">Belum ada materi yang dibagikan.</p>
+                          </div>
+                      ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {materials
+                                .filter(m => m.classId === student.classId)
+                                .map((material) => {
+                                  const subject = MOCK_SUBJECTS.find(s => s.id === material.subjectId);
+                                  return (
+                                      <div key={material.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all group">
+                                          <div className="flex justify-between items-start mb-2">
+                                              <span className="text-[10px] font-bold uppercase px-2 py-1 bg-blue-100 text-blue-700 rounded-md">
+                                                  {subject?.name || material.subjectId}
+                                              </span>
+                                              <span className="text-[10px] text-gray-400">
+                                                  {new Date(material.createdAt).toLocaleDateString('id-ID')}
+                                              </span>
+                                          </div>
+                                          <h4 className="font-bold text-gray-800 mb-1 group-hover:text-blue-600 transition-colors">{material.title}</h4>
+                                          <p className="text-xs text-gray-500 mb-4 line-clamp-2">{material.description}</p>
+                                          <a 
+                                              href={material.link} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer"
+                                              className="w-full flex items-center justify-center py-2 bg-white border border-blue-200 text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors"
+                                          >
+                                              <PlusCircle size={16} className="mr-2"/> Klik Materi
+                                          </a>
+                                      </div>
+                                  );
+                              })}
+                          </div>
+                      )}
+                  </div>
+              </div>
           )}
 
           {/* --- LIAISON BOOK TAB --- */}
