@@ -44,13 +44,13 @@ const menuGroups = [
     icon: BookOpenCheck,
     items: [
       { id: 'absensi', label: 'Absensi', icon: CalendarCheck, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'agenda', label: 'Agenda', icon: ListTodo, roles: ['admin', 'guru', 'supervisor', 'siswa'] },
       { id: 'materi', label: 'Materi', icon: BookOpen, roles: ['admin', 'guru', 'supervisor', 'siswa'] },
       { id: 'nilai', label: 'Nilai & Rapor', icon: GraduationCap, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'sikap', label: 'DPL & 7KAIH', icon: Smile, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'jurnal-pembelajaran', label: 'Jurnal Pembelajaran', icon: NotebookPen, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'laporan-pembelajaran', label: 'Laporan Pembelajaran', icon: FileText, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'dokumentasi-pembelajaran', label: 'Dokumentasi Pembelajaran', icon: Camera, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'kegiatan', label: 'Kegiatan & Ekskul', icon: Tent, roles: ['admin', 'guru', 'supervisor'] },
     ]
   },
   {
@@ -59,7 +59,7 @@ const menuGroups = [
     items: [
       { id: 'monitor-siswa', label: 'Monitoring Siswa', icon: UserCheck, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'konseling', label: 'Konseling & Perilaku', icon: HeartHandshake, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'kegiatan', label: 'Kegiatan & Ekskul', icon: Tent, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'agenda', label: 'Agenda', icon: ListTodo, roles: ['admin', 'guru', 'supervisor', 'siswa'] },
       { id: 'buku-penghubung', label: 'Buku Penghubung', icon: BookOpen, roles: ['admin', 'guru', 'supervisor'] },
     ]
   },
