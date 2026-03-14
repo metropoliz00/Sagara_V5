@@ -27,8 +27,8 @@ const AgendaView: React.FC<AgendaViewProps> = ({
   const [editingAgenda, setEditingAgenda] = useState<AgendaItem | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
-  const [newAgenda, setNewAgenda] = useState<{title: string; date: string; type: 'urgent'|'warning'|'info'}>({
-    title: '', date: new Date().toISOString().split('T')[0], type: 'info'
+  const [newAgenda, setNewAgenda] = useState<{title: string; date: string; endDate: string; time: string; type: 'urgent'|'warning'|'info'}>({
+    title: '', date: new Date().toISOString().split('T')[0], endDate: '', time: '', type: 'info'
   });
 
   const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, action: () => void, message: string}>({
@@ -71,10 +71,12 @@ const AgendaView: React.FC<AgendaViewProps> = ({
           classId, 
           title: newAgenda.title, 
           date: newAgenda.date, 
+          endDate: newAgenda.endDate || undefined,
+          time: newAgenda.time || undefined,
           type: newAgenda.type, 
           completed: false
         });
-        setNewAgenda({ title: '', date: new Date().toISOString().split('T')[0], type: 'info' });
+        setNewAgenda({ title: '', date: new Date().toISOString().split('T')[0], endDate: '', time: '', type: 'info' });
         setIsAddModalOpen(false);
       }
     }
@@ -195,7 +197,16 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                   {item.type === 'warning' && <span className="px-2 py-0.5 bg-amber-100 text-amber-600 text-[10px] font-bold rounded-full uppercase">Warning</span>}
                 </div>
                 <div className="flex items-center text-xs text-gray-500 mt-1 gap-3">
-                  <span className="flex items-center gap-1"><Calendar size={12}/> {formatLongDate(item.date)}</span>
+                  <span className="flex items-center gap-1">
+                    <Calendar size={12}/> 
+                    {formatLongDate(item.date)}
+                    {item.endDate && item.endDate !== item.date && (
+                      <>
+                        <span className="mx-1">-</span>
+                        {formatLongDate(item.endDate)}
+                      </>
+                    )}
+                  </span>
                   {item.time && <span className="flex items-center gap-1"><Clock size={12}/> {item.time}</span>}
                 </div>
               </div>
@@ -249,7 +260,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tanggal</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tanggal Mulai</label>
                   <input 
                     required
                     type="date" 
@@ -259,32 +270,36 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                   />
                 </div>
                 <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tanggal Selesai (Opsional)</label>
+                  <input 
+                    type="date" 
+                    className="w-full border p-2 rounded-xl text-sm focus:ring-2 focus:ring-[#5AB2FF] outline-none" 
+                    value={editingAgenda ? (editingAgenda.endDate || '') : newAgenda.endDate} 
+                    onChange={e => editingAgenda ? setEditingAgenda({...editingAgenda, endDate: e.target.value}) : setNewAgenda({...newAgenda, endDate: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Waktu (Opsional)</label>
                   <input 
                     type="time" 
                     className="w-full border p-2 rounded-xl text-sm focus:ring-2 focus:ring-[#5AB2FF] outline-none" 
-                    value={editingAgenda ? (editingAgenda.time || '') : ''} 
-                    onChange={e => editingAgenda ? setEditingAgenda({...editingAgenda, time: e.target.value}) : setNewAgenda({...newAgenda})}
+                    value={editingAgenda ? (editingAgenda.time || '') : newAgenda.time} 
+                    onChange={e => editingAgenda ? setEditingAgenda({...editingAgenda, time: e.target.value}) : setNewAgenda({...newAgenda, time: e.target.value})}
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1 text-center mb-2">Prioritas</label>
-                <div className="flex gap-2">
-                  {(['info', 'warning', 'urgent'] as const).map(t => (
-                    <button 
-                      key={t} 
-                      type="button"
-                      onClick={() => editingAgenda ? setEditingAgenda({...editingAgenda, type: t}) : setNewAgenda({...newAgenda, type: t})} 
-                      className={`flex-1 py-2 rounded-xl border capitalize text-sm transition-all ${
-                        (editingAgenda ? editingAgenda.type === t : newAgenda.type === t) 
-                          ? 'bg-[#5AB2FF] text-white font-bold border-[#5AB2FF] shadow-md' 
-                          : 'bg-white text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Prioritas</label>
+                  <select
+                    className="w-full border p-2 rounded-xl text-sm focus:ring-2 focus:ring-[#5AB2FF] outline-none"
+                    value={editingAgenda ? editingAgenda.type : newAgenda.type}
+                    onChange={e => editingAgenda ? setEditingAgenda({...editingAgenda, type: e.target.value as any}) : setNewAgenda({...newAgenda, type: e.target.value as any})}
+                  >
+                    <option value="info">Info</option>
+                    <option value="warning">Warning</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
                 </div>
               </div>
               <div className="pt-4 flex gap-3">

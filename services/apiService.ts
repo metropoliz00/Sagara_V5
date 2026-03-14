@@ -393,7 +393,11 @@ export const apiService = {
   getAgendas: async (currentUser: User | null): Promise<AgendaItem[]> => {
     const { data, error } = await supabase.from('agendas').select('*');
     if (error) return [];
-    return data.map((a: any) => ({ ...a, classId: a.class_id }));
+    return data.map((a: any) => ({ 
+      ...a, 
+      classId: a.class_id,
+      endDate: a.end_date 
+    }));
   },
   createAgenda: async (agenda: AgendaItem): Promise<void> => {
     console.log("Creating agenda:", agenda);
@@ -401,6 +405,7 @@ export const apiService = {
       class_id: agenda.classId,
       title: agenda.title,
       date: agenda.date,
+      end_date: agenda.endDate,
       time: agenda.time,
       type: agenda.type,
       completed: agenda.completed
@@ -412,6 +417,7 @@ export const apiService = {
       class_id: agenda.classId,
       title: agenda.title,
       date: agenda.date,
+      end_date: agenda.endDate,
       time: agenda.time,
       type: agenda.type,
       completed: agenda.completed

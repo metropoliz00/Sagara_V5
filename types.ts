@@ -133,6 +133,7 @@ export interface AgendaItem {
   classId: string;
   title: string;
   date: string;
+  endDate?: string;
   time?: string;
   type: 'urgent' | 'warning' | 'info';
   completed: boolean;
