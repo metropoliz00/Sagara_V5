@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Student, GradeRecord, LiaisonLog, AgendaItem, Material, BehaviorLog, PermissionRequest, KarakterAssessment, KARAKTER_INDICATORS, KarakterIndicatorKey, LearningDocumentation, BookLoan } from '../types';
-import { MOCK_SUBJECTS, CALENDAR_CODES } from '../constants';
+import { MOCK_SUBJECTS, CALENDAR_CODES, PREFILLED_CALENDAR_2025 } from '../constants';
 import { 
   User, Calendar, Send, FileText, CheckCircle, XCircle, 
   BookOpen, LayoutDashboard, Clock,
@@ -148,8 +148,21 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
                       }
                       setKktpMap(finalKktp);
                       
-                      if (config.academicCalendar) {
+                      if (config.academicCalendar && Object.keys(config.academicCalendar).length > 0) {
                           setAcademicCalendar(config.academicCalendar);
+                      } else {
+                          // Try fetching global academic calendar
+                          try {
+                              const globalCalendar = await apiService.getAcademicCalendar('global');
+                              if (globalCalendar && Object.keys(globalCalendar).length > 0) {
+                                  setAcademicCalendar(globalCalendar);
+                              } else {
+                                  setAcademicCalendar(PREFILLED_CALENDAR_2025);
+                              }
+                          } catch (err) {
+                              console.error("Failed to load global academic calendar", err);
+                              setAcademicCalendar(PREFILLED_CALENDAR_2025);
+                          }
                       }
                   }
               } catch (e) {

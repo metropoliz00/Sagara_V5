@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AcademicCalendarData, Holiday } from '../../types';
 import { Calendar, Save, Loader2, RefreshCw, AlertTriangle, X, Lock } from 'lucide-react';
-import { CALENDAR_CODES } from '../../constants';
+import { CALENDAR_CODES, PREFILLED_CALENDAR_2025 } from '../../constants';
 
 interface AcademicCalendarTabProps {
   initialData: AcademicCalendarData;
@@ -33,23 +33,6 @@ const HOLIDAY_DESCRIPTIONS_2025_2026: { [key: string]: string } = {
   '2026-06-01': 'Hari Lahir Pancasila',
   '2026-06-16': 'Tahun Baru Hijriyah 1448',
 };
-
-const PREFILLED_CALENDAR_2025: AcademicCalendarData = {
-  '2025-07': [null,null,null,null,null,null,'LU',null,null,null,null,null,'LU','1','2','3','4','5','6','LU','7','8','9','10','11','12','LU','13','14','15','16'],
-  '2025-08': ['17','18','LU','19','20','21','22','23','24','LU','25','26','27','28','29','30','LHB','31','32','33','34','35','36','LU','37','38','39','40','41','42','LU'],
-  '2025-09': ['43','44','45','46','LHB','47','LU','48','49','50','51','52','53','LU','54','55','56','57','58','59','LU','60','61','62','63','64','65','LU','66','67',null],
-  '2025-10': ['68','69','70','71','LU','72','73','74','KTS','KTS','KTS','LU','75','76','77','78','79','80','LU','81','82','83','84','85','86','LU','87','88','89','90','91'],
-  '2025-11': ['92','LU','93','94','95','96','97','98','LU','99','100','101','102','103','104','105','106','LU','107','108','109','110','111','112','LU','113','114','115','116','LU',null],
-  '2025-12': ['117','118','119','120','121','122','LU','123','124','125','126','127','128','LU','129','130','131','132','133','134','LU','LS1','LS1','LS1','LHB','CB','LS1','LU','LS1','LS1','LS1'],
-  '2026-01': ['LHB','1','2','LU','3','4','5','6','7','8','LU','9','10','11','12','LHB','13','LU','14','15','16','17','18','19','LU','20','21','22','23','24','25'],
-  '2026-02': ['LU','26','27','28','29','30','31','LU','32','33','34','35','36','37','LU','38','LHB','39','40','KPP','KPP','LU','KPP','KPP','CB','CB','LHR','LHR',null,null,null],
-  '2026-03': ['LU','41','42','43','44','45','46','LU','47','48','49','50','51','52','LU','53','54','55','56','LHB','LHB','LHB','LU','CB','CB','LHR','LHR','LHR','LU','57','58','59'],
-  '2026-04': ['60','61','LHB','LU','62','63','64','65','66','67','LU','68','69','70','71','72','73','LU','74','75','76','77','78','79','LU','80','81','82','83','84',null],
-  '2026-05': ['LHB','85','LU','86','87','88','89','90','91','LU','92','93','94','LHB','95','96','LU','97','98','99','100','101','102','LU','103','104','LHB','105','106','107','LHB'],
-  '2026-06': ['LHB','108','109','110','111','LU','112','113','114','115','116','117','LU','118','119','LHB','120','121','122','LU','LS2','LS2','LS2','LS2','LS2','LS2','LS2','LU','LS2','LS2',null],
-  '2026-07': ['LS2','LS2','LS2','LS2','LS2','LU','LS2','LS2','LS2','LS2','LS2','LU',null,null,null,null,null,null,'LU',null,null,null,null,null,null,'LU',null,null,null,null,null],
-};
-
 
 const AcademicCalendarTab: React.FC<AcademicCalendarTabProps> = ({ initialData, onSave, onAddHoliday, onShowNotification, classId, isReadOnly = false }) => {
   const [startYear, setStartYear] = useState(2025);
