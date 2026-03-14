@@ -1369,6 +1369,7 @@ const AppContent: React.FC = () => {
       if (fUsers !== null) setUsers(Array.isArray(fUsers) ? fUsers as User[] : []);
       if (fStudents !== null) setStudents(Array.isArray(fStudents) ? fStudents as Student[] : []);
       if (fAgendas !== null) setAgendas(Array.isArray(fAgendas) ? (fAgendas as AgendaItem[]).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) : []);
+      console.log("Fetched materials:", fMaterials);
       if (fMaterials !== null) setMaterials(Array.isArray(fMaterials) ? fMaterials as Material[] : []);
       if (fGrades !== null) setGrades(Array.isArray(fGrades) ? fGrades as GradeRecord[] : []);
       if (fCounseling !== null) setCounselingLogs(Array.isArray(fCounseling) ? (fCounseling as BehaviorLog[]).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) : []);

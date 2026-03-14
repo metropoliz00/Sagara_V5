@@ -429,8 +429,13 @@ export const apiService = {
 
   // --- Materials ---
   getMaterials: async (classId: string): Promise<Material[]> => {
+    console.log("Fetching materials for classId:", classId);
     const { data, error } = await supabase.from('materials').select('*').eq('class_id', classId);
-    if (error) return [];
+    if (error) {
+      console.error("Error fetching materials:", error);
+      return [];
+    }
+    console.log("Materials fetched from Supabase:", data);
     return data.map((m: any) => ({
       id: m.id,
       classId: m.class_id,

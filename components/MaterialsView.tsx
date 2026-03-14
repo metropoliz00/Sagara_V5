@@ -21,6 +21,7 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
   materials, subjects, currentUser, classId,
   onAddMaterial, onUpdateMaterial, onDeleteMaterial, onShowNotification
 }) => {
+  console.log("MaterialsView received materials:", materials, "for classId:", classId);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
