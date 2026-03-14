@@ -443,6 +443,7 @@ export const apiService = {
       title: m.title,
       description: m.description,
       link: m.link,
+      isVisible: m.is_visible,
       createdAt: m.created_at
     }));
   },
@@ -452,7 +453,8 @@ export const apiService = {
       subject_id: material.subjectId,
       title: material.title,
       description: material.description,
-      link: material.link
+      link: material.link,
+      is_visible: material.isVisible
     }]);
     if (error) {
       console.error("Error creating material:", error);
@@ -464,7 +466,8 @@ export const apiService = {
       subject_id: material.subjectId,
       title: material.title,
       description: material.description,
-      link: material.link
+      link: material.link,
+      is_visible: material.isVisible
     }).eq('id', material.id);
     if (error) {
       console.error("Error updating material:", error);

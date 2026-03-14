@@ -381,6 +381,7 @@ export interface Material {
   title: string;
   description?: string;
   link: string;
+  isVisible: boolean;
   createdAt: string;
 }
 

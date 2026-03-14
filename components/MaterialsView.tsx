@@ -31,7 +31,8 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
     subjectId: '',
     title: '',
     description: '',
-    link: ''
+    link: '',
+    isVisible: true
   });
 
   const isTeacher = currentUser?.role === 'guru' || currentUser?.role === 'admin';
@@ -42,14 +43,16 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
         subjectId: editingMaterial.subjectId,
         title: editingMaterial.title,
         description: editingMaterial.description || '',
-        link: editingMaterial.link
+        link: editingMaterial.link,
+        isVisible: editingMaterial.isVisible
       });
     } else {
       setFormData({
         subjectId: subjects[0]?.id || '',
         title: '',
         description: '',
-        link: ''
+        link: '',
+        isVisible: true
       });
     }
   }, [editingMaterial, subjects]);
@@ -58,7 +61,8 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
     const matchesSearch = m.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          (m.description?.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesSubject = selectedSubject === 'all' || m.subjectId === selectedSubject;
-    return matchesSearch && matchesSubject;
+    const isVisibleToStudent = isTeacher || m.isVisible;
+    return matchesSearch && matchesSubject && isVisibleToStudent;
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -157,7 +161,14 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
                       <BookOpen size={24} />
                     </div>
                     {isTeacher && (
-                      <div className="flex space-x-1">
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          onClick={() => onUpdateMaterial({...material, isVisible: !material.isVisible})}
+                          className={`p-1.5 rounded-lg transition-colors ${material.isVisible ? 'text-[#5AB2FF] bg-[#5AB2FF]/10' : 'text-gray-400 bg-gray-100'}`}
+                          title={material.isVisible ? 'Sembunyikan dari siswa' : 'Tampilkan ke siswa'}
+                        >
+                          {material.isVisible ? <div className="w-4 h-4 bg-current rounded-full" /> : <div className="w-4 h-4 bg-current rounded-full opacity-50" />}
+                        </button>
                         <button 
                           onClick={() => { setEditingMaterial(material); setIsModalOpen(true); }}
                           className="p-1.5 text-gray-400 hover:text-[#5AB2FF] hover:bg-[#5AB2FF]/10 rounded-lg transition-colors"
@@ -275,6 +286,16 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
                     onChange={e => setFormData({...formData, link: e.target.value})}
                   />
                 </div>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
+                <label className="text-sm font-bold text-gray-700">Tampilkan ke Siswa</label>
+                <button
+                  type="button"
+                  onClick={() => setFormData({...formData, isVisible: !formData.isVisible})}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.isVisible ? 'bg-[#5AB2FF]' : 'bg-gray-200'}`}
+                >
+                  <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.isVisible ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
               </div>
               <div className="pt-4 flex space-x-3">
                 <button 
