@@ -1612,11 +1612,13 @@ const AppContent: React.FC = () => {
       return <Login onLoginSuccess={setCurrentUser} schoolProfile={schoolProfile} />;
   }
 
-  const isStudentRole = currentUser.role === 'siswa';
-  const isAdminRole = currentUser.role === 'admin';
-  const isSupervisor = currentUser.role === 'supervisor';
+  const isStudentRole = currentUser.role?.toLowerCase() === 'siswa';
+  console.log("currentUser:", currentUser);
+  console.log("isStudentRole:", isStudentRole);
+  const isAdminRole = currentUser.role?.toLowerCase() === 'admin';
+  const isSupervisor = currentUser.role?.toLowerCase() === 'supervisor';
   
-  const canViewGraduates = isSupervisor || isAdminRole || (currentUser.role === 'guru' && (currentUser.position?.toLowerCase() || '').includes('kelas 6'));
+  const canViewGraduates = isSupervisor || isAdminRole || (currentUser.role?.toLowerCase() === 'guru' && (currentUser.position?.toLowerCase() || '').includes('kelas 6'));
 
   const myStudentData = isStudentRole 
     ? (students.find(s => String(s.id).trim() === String(currentUser.studentId).trim()) || null)
