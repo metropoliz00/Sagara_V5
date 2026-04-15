@@ -16,6 +16,15 @@ const isApiConfigured = () => {
 
 export const apiService = {
   isConfigured: isApiConfigured,
+  
+  // --- Real-time Subscription ---
+  subscribe: (table: string, callback: (payload: any) => void) => {
+    if (!supabase) return null;
+    return supabase
+      .channel(`public:${table}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table }, callback)
+      .subscribe();
+  },
 
   // --- Auth & Users ---
   login: async (username: string, password?: string): Promise<User | null> => {

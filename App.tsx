@@ -1,6 +1,7 @@
 // ... (imports remain the same)
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from './services/supabaseClient';
 import Sidebar from './components/Sidebar';
 import DashboardContainer from './components/DashboardContainer';
 import StudentList from './components/StudentList';
@@ -1304,6 +1305,31 @@ const AppContent: React.FC = () => {
       processDelete();
     });
   };
+
+  // Real-time Database Subscriptions
+  useEffect(() => {
+    if (!currentUser || !apiService.isConfigured()) return;
+
+    const tables = [
+      'users', 'students', 'agendas', 'materials', 'grades', 
+      'counseling_logs', 'extracurriculars', 'holidays', 
+      'attendance', 'sikap_assessments', 'karakter_assessments',
+      'liaison_logs', 'permission_requests', 'book_loans', 'sumatif_assessments'
+    ];
+
+    const channels = tables.map(table => {
+      return apiService.subscribe(table, () => {
+        console.log(`Real-time update from ${table}`);
+        fetchData(true, true); // Silent refresh
+      });
+    });
+
+    return () => {
+      channels.forEach(channel => {
+        if (channel) supabase.removeChannel(channel);
+      });
+    };
+  }, [currentUser]);
 
   const fetchData = async (forceRefresh = false, silent = false) => {
     if (!currentUser) return;

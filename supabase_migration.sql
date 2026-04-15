@@ -523,3 +523,32 @@ CREATE POLICY "Enable all access for all users" ON "public"."exam_results" AS PE
 INSERT INTO users (username, password, role, full_name, class_id)
 VALUES ('admin', '123456', 'admin', 'Administrator Utama', 'all')
 ON CONFLICT (username) DO NOTHING;
+
+-- Enable Realtime for all tables
+ALTER PUBLICATION supabase_realtime ADD TABLE users;
+ALTER PUBLICATION supabase_realtime ADD TABLE students;
+ALTER PUBLICATION supabase_realtime ADD TABLE agendas;
+ALTER PUBLICATION supabase_realtime ADD TABLE holidays;
+ALTER PUBLICATION supabase_realtime ADD TABLE attendance;
+ALTER PUBLICATION supabase_realtime ADD TABLE counseling;
+ALTER PUBLICATION supabase_realtime ADD TABLE extracurriculars;
+ALTER PUBLICATION supabase_realtime ADD TABLE inventory;
+ALTER PUBLICATION supabase_realtime ADD TABLE profiles;
+ALTER PUBLICATION supabase_realtime ADD TABLE penilaian_sikap;
+ALTER PUBLICATION supabase_realtime ADD TABLE penilaian_karakter;
+ALTER PUBLICATION supabase_realtime ADD TABLE employment_links;
+ALTER PUBLICATION supabase_realtime ADD TABLE learning_reports;
+ALTER PUBLICATION supabase_realtime ADD TABLE learning_documentation;
+ALTER PUBLICATION supabase_realtime ADD TABLE buku_penghubung;
+ALTER PUBLICATION supabase_realtime ADD TABLE permission_requests;
+ALTER PUBLICATION supabase_realtime ADD TABLE support_documents;
+ALTER PUBLICATION supabase_realtime ADD TABLE book_loans;
+ALTER PUBLICATION supabase_realtime ADD TABLE book_inventory;
+ALTER PUBLICATION supabase_realtime ADD TABLE class_config;
+ALTER PUBLICATION supabase_realtime ADD TABLE academic_calendar;
+ALTER PUBLICATION supabase_realtime ADD TABLE school_assets;
+ALTER PUBLICATION supabase_realtime ADD TABLE bos_management;
+ALTER PUBLICATION supabase_realtime ADD TABLE graduates;
+ALTER PUBLICATION supabase_realtime ADD TABLE sumatif_assessments;
+ALTER PUBLICATION supabase_realtime ADD TABLE questions;
+ALTER PUBLICATION supabase_realtime ADD TABLE exam_results;
