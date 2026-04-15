@@ -31,6 +31,9 @@ DROP TABLE IF EXISTS agendas CASCADE;
 DROP TABLE IF EXISTS students CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS graduates CASCADE;
+DROP TABLE IF EXISTS sumatif_assessments CASCADE;
+DROP TABLE IF EXISTS questions CASCADE;
+DROP TABLE IF EXISTS exam_results CASCADE;
 
 -- 1. Users table
 CREATE TABLE users (
@@ -467,6 +470,54 @@ AS PERMISSIVE FOR ALL
 TO public
 USING (true)
 WITH CHECK (true);
+
+-- 29. Sumatif Assessments table
+CREATE TABLE IF NOT EXISTS sumatif_assessments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  class_id TEXT NOT NULL,
+  subject_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  learning_objectives TEXT,
+  token TEXT NOT NULL,
+  question_count NUMERIC DEFAULT 10,
+  is_active BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 30. Questions table
+CREATE TABLE IF NOT EXISTS questions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  assessment_id UUID REFERENCES sumatif_assessments(id) ON DELETE CASCADE,
+  type TEXT NOT NULL, -- 'pilihan-ganda', 'pilihan-ganda-kompleks', 'benar-salah'
+  text TEXT NOT NULL,
+  options JSONB DEFAULT '[]',
+  correct_answer JSONB NOT NULL,
+  points NUMERIC DEFAULT 1,
+  "order" NUMERIC DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 31. Exam Results table
+CREATE TABLE IF NOT EXISTS exam_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  assessment_id UUID REFERENCES sumatif_assessments(id) ON DELETE CASCADE,
+  student_id TEXT NOT NULL,
+  student_name TEXT NOT NULL,
+  score NUMERIC DEFAULT 0,
+  total_points NUMERIC DEFAULT 0,
+  answers JSONB NOT NULL,
+  completed_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE sumatif_assessments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE exam_results ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+CREATE POLICY "Enable all access for all users" ON "public"."sumatif_assessments" AS PERMISSIVE FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Enable all access for all users" ON "public"."questions" AS PERMISSIVE FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Enable all access for all users" ON "public"."exam_results" AS PERMISSIVE FOR ALL TO public USING (true) WITH CHECK (true);
 
 -- Insert default admin user
 INSERT INTO users (username, password, role, full_name, class_id)

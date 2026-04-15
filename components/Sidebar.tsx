@@ -4,7 +4,8 @@ import {
   LayoutDashboard, Users, CalendarCheck, GraduationCap, School, LogOut, X, ChevronRight, ChevronLeft,
   UserCog, HeartHandshake, Tent, BookText, Smile, Link2, FileText, Contact, BookOpen, 
   UserCheck, Database, NotebookPen, Files, Activity, Building, Wallet, Camera, Book,
-  Star, FolderOpen, BookOpenCheck, UsersRound, Briefcase, Settings, Award, ListTodo
+  Star, FolderOpen, BookOpenCheck, UsersRound, Briefcase, Settings, Award, ListTodo,
+  ClipboardList
 } from 'lucide-react';
 import { ViewState, User } from '../types';
 
@@ -51,6 +52,7 @@ const menuGroups = [
       { id: 'jurnal-pembelajaran', label: 'Jurnal Pembelajaran', icon: NotebookPen, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'laporan-pembelajaran', label: 'Laporan Pembelajaran', icon: FileText, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'dokumentasi-pembelajaran', label: 'Dokumentasi Pembelajaran', icon: Camera, roles: ['admin', 'guru', 'supervisor'] },
+      { id: 'pengaturan-sumatif', label: 'Pengaturan Sumatif', icon: ClipboardList, roles: ['admin', 'guru'] },
     ]
   },
   {

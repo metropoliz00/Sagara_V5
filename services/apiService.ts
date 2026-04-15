@@ -6,7 +6,8 @@ import {
   ScheduleItem, PiketGroup, SikapAssessment, KarakterAssessment, SeatingLayouts, 
   AcademicCalendarData, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, 
   LearningJournalEntry, SupportDocument, OrganizationStructure, SchoolAsset, 
-  BOSTransaction, LearningDocumentation, BookLoan, BookInventory, Graduate, Material
+  BOSTransaction, LearningDocumentation, BookLoan, BookInventory, Graduate, Material,
+  SumatifAssessment, Question, StudentExamResult
 } from '../types';
 
 const isApiConfigured = () => {
@@ -1306,5 +1307,161 @@ export const apiService = {
   },
   restoreData: async (data: any): Promise<any> => {
     return { message: 'Restore logic needs implementation' };
+  },
+
+  // --- Sumatif Assessments ---
+  getSumatifAssessments: async (classId: string): Promise<SumatifAssessment[]> => {
+    const { data, error } = await supabase
+      .from('sumatif_assessments')
+      .select('*')
+      .eq('class_id', classId);
+    
+    if (error) return [];
+    return data.map((a: any) => ({
+      ...a,
+      classId: a.class_id,
+      subjectId: a.subject_id,
+      learningObjectives: a.learning_objectives,
+      questionCount: Number(a.question_count),
+      isActive: a.is_active,
+      createdAt: a.created_at
+    }));
+  },
+
+  saveSumatifAssessment: async (assessment: Partial<SumatifAssessment>): Promise<SumatifAssessment> => {
+    const dbData = {
+      class_id: assessment.classId,
+      subject_id: assessment.subjectId,
+      title: assessment.title,
+      learning_objectives: assessment.learningObjectives,
+      token: assessment.token,
+      question_count: assessment.questionCount,
+      is_active: assessment.isActive
+    };
+
+    if (assessment.id) {
+      const { data, error } = await supabase
+        .from('sumatif_assessments')
+        .update(dbData)
+        .eq('id', assessment.id)
+        .select()
+        .single();
+      if (error) throw error;
+      return { ...data, classId: data.class_id, subjectId: data.subject_id, learningObjectives: data.learning_objectives, questionCount: Number(data.question_count), isActive: data.is_active };
+    } else {
+      const { data, error } = await supabase
+        .from('sumatif_assessments')
+        .insert([dbData])
+        .select()
+        .single();
+      if (error) throw error;
+      return { ...data, classId: data.class_id, subjectId: data.subject_id, learningObjectives: data.learning_objectives, questionCount: Number(data.question_count), isActive: data.is_active };
+    }
+  },
+
+  deleteSumatifAssessment: async (id: string): Promise<void> => {
+    await supabase.from('sumatif_assessments').delete().eq('id', id);
+  },
+
+  // --- Questions ---
+  getQuestions: async (assessmentId: string): Promise<Question[]> => {
+    const { data, error } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('assessment_id', assessmentId)
+      .order('order', { ascending: true });
+    
+    if (error) return [];
+    return data.map((q: any) => ({
+      ...q,
+      assessmentId: q.assessment_id,
+      correctAnswer: q.correct_answer,
+      points: Number(q.points),
+      order: Number(q.order)
+    }));
+  },
+
+  saveQuestion: async (question: Partial<Question>): Promise<Question> => {
+    const dbData = {
+      assessment_id: question.assessmentId,
+      type: question.type,
+      text: question.text,
+      options: question.options,
+      correct_answer: question.correctAnswer,
+      points: question.points,
+      order: question.order
+    };
+
+    if (question.id) {
+      const { data, error } = await supabase
+        .from('questions')
+        .update(dbData)
+        .eq('id', question.id)
+        .select()
+        .single();
+      if (error) throw error;
+      return { ...data, assessmentId: data.assessment_id, correctAnswer: data.correct_answer, points: Number(data.points), order: Number(data.order) };
+    } else {
+      const { data, error } = await supabase
+        .from('questions')
+        .insert([dbData])
+        .select()
+        .single();
+      if (error) throw error;
+      return { ...data, assessmentId: data.assessment_id, correctAnswer: data.correct_answer, points: Number(data.points), order: Number(data.order) };
+    }
+  },
+
+  deleteQuestion: async (id: string): Promise<void> => {
+    await supabase.from('questions').delete().eq('id', id);
+  },
+
+  // --- Exam Results ---
+  getExamResults: async (assessmentId: string): Promise<StudentExamResult[]> => {
+    const { data, error } = await supabase
+      .from('exam_results')
+      .select('*')
+      .eq('assessment_id', assessmentId);
+    
+    if (error) return [];
+    return data.map((r: any) => ({
+      ...r,
+      assessmentId: r.assessment_id,
+      studentId: r.student_id,
+      studentName: r.student_name,
+      score: Number(r.score),
+      totalPoints: Number(r.total_points),
+      completedAt: r.completed_at
+    }));
+  },
+
+  getStudentExamResults: async (studentId: string): Promise<StudentExamResult[]> => {
+    const { data, error } = await supabase
+      .from('exam_results')
+      .select('*')
+      .eq('student_id', studentId);
+    
+    if (error) return [];
+    return data.map((r: any) => ({
+      ...r,
+      assessmentId: r.assessment_id,
+      studentId: r.student_id,
+      studentName: r.student_name,
+      score: Number(r.score),
+      totalPoints: Number(r.total_points),
+      completedAt: r.completed_at
+    }));
+  },
+
+  saveExamResult: async (result: Omit<StudentExamResult, 'id' | 'completedAt'>): Promise<void> => {
+    const dbData = {
+      assessment_id: result.assessmentId,
+      student_id: result.studentId,
+      student_name: result.studentName,
+      score: result.score,
+      total_points: result.totalPoints,
+      answers: result.answers
+    };
+    await supabase.from('exam_results').insert([dbData]);
   },
 };

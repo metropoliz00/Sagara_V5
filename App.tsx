@@ -30,6 +30,7 @@ import BookLoanView from './components/BookLoanView';
 import GraduatesView from './components/GraduatesView';
 import AgendaView from './components/AgendaView';
 import MaterialsView from './components/MaterialsView';
+import SumatifAdmin from './components/SumatifAdmin';
 import CustomModal from './components/CustomModal'; 
 import PaperPlaneIcon from './components/PaperPlaneIcon';
 import { ViewState, Student, AgendaItem, Material, Extracurricular, BehaviorLog, GradeRecord, TeacherProfileData, SchoolProfileData, User, Holiday, SikapAssessment, KarakterAssessment, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, LearningJournalEntry, SupportDocument, InventoryItem, SchoolAsset, BOSTransaction, LearningDocumentation, BookLoan, BookInventory } from './types';
@@ -93,7 +94,8 @@ const AppContent: React.FC = () => {
       'supervisi': 'Supervisi',
       'administrasi/sarana-prasarana': 'Sarana Prasarana',
       'administrasi/dana-bos': 'Manajemen BOS',
-      'administrasi/peminjaman-buku': 'Peminjaman Buku'
+      'administrasi/peminjaman-buku': 'Peminjaman Buku',
+      'pengaturan-sumatif': 'Pengaturan Sumatif'
     };
 
     const title = viewTitles[currentView] || 'Sistem Akademik';
@@ -2008,6 +2010,13 @@ const AppContent: React.FC = () => {
                         isDemoMode={isDemoMode}
                         classId={activeClassId}
                         onShowNotification={handleShowNotification}
+                    />
+                } />
+                <Route path="/pengaturan-sumatif" element={
+                    isStudentRole ? <Navigate to="/" replace /> :
+                    <SumatifAdmin 
+                        currentUser={currentUser}
+                        activeClassId={activeClassId}
                     />
                 } />
                 <Route path="/administrasi/sarana-prasarana" element={

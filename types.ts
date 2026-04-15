@@ -412,7 +412,42 @@ export type ViewState =
   | 'supervisi'
   | 'administrasi/sarana-prasarana'
   | 'administrasi/dana-bos'
-  | 'administrasi/peminjaman-buku';
+  | 'administrasi/peminjaman-buku'
+  | 'pengaturan-sumatif';
+
+export interface SumatifAssessment {
+  id: string;
+  classId: string;
+  subjectId: string;
+  title: string;
+  learningObjectives: string;
+  token: string;
+  questionCount: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface Question {
+  id: string;
+  assessmentId: string;
+  type: 'pilihan-ganda' | 'pilihan-ganda-kompleks' | 'benar-salah';
+  text: string;
+  options?: string[]; // For multiple choice
+  correctAnswer: string | string[]; // Single string for PG/BS, array for PGK
+  points: number;
+  order: number;
+}
+
+export interface StudentExamResult {
+  id: string;
+  assessmentId: string;
+  studentId: string;
+  studentName: string;
+  score: number;
+  totalPoints: number;
+  answers: Record<string, any>; // questionId -> student's answer
+  completedAt: string;
+}
 
 export interface BookLoan {
   id: string;
