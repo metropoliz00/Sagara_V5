@@ -55,7 +55,7 @@ export const apiService = {
 
     let nisn = undefined;
     let studentName = undefined;
-    if (data.role === 'siswa' && data.student_id) {
+    if (data.role?.toLowerCase() === 'siswa' && data.student_id) {
       const { data: studentData } = await supabase.from('students').select('nisn, name').eq('id', data.student_id).single();
       if (studentData) {
         nisn = studentData.nisn;
@@ -84,7 +84,7 @@ export const apiService = {
 
     let nisn = undefined;
     let studentName = undefined;
-    if (data.role === 'siswa' && data.student_id) {
+    if (data.role?.toLowerCase() === 'siswa' && data.student_id) {
       const { data: studentData } = await supabase.from('students').select('nisn, name').eq('id', data.student_id).single();
       if (studentData) {
         nisn = studentData.nisn;
