@@ -244,7 +244,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onC
                   )}
                 </button>
                 
-                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isGroupOpen ? 'max-h-96' : 'max-h-0'}`}>
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isGroupOpen ? 'max-h-[1000px]' : 'max-h-0'}`}>
                   <div className="pt-1 space-y-1">
                     {visibleItems.map(item => renderMenuItem(item))}
                   </div>
