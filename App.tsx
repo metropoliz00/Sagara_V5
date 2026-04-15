@@ -34,6 +34,7 @@ import MaterialsView from './components/MaterialsView';
 import SumatifAdmin from './components/SumatifAdmin';
 import CustomModal from './components/CustomModal'; 
 import PaperPlaneIcon from './components/PaperPlaneIcon';
+import ExamSession from './components/student/ExamSession';
 import { ViewState, Student, AgendaItem, Material, Extracurricular, BehaviorLog, GradeRecord, TeacherProfileData, SchoolProfileData, User, Holiday, SikapAssessment, KarakterAssessment, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, LearningJournalEntry, SupportDocument, InventoryItem, SchoolAsset, BOSTransaction, LearningDocumentation, BookLoan, BookInventory, SumatifAssessment, StudentExamResult } from './types';
 import { MOCK_SUBJECTS, MOCK_STUDENTS, MOCK_EXTRACURRICULARS } from './constants';
 import { apiService } from './services/apiService';
@@ -2166,6 +2167,9 @@ const AppContent: React.FC = () => {
                 <Route path="/pendahuluan/*" element={
                     isStudentRole ? <Navigate to="/" replace /> :
                     <IntroductionView />
+                } />
+                <Route path="/exam/:assessmentId" element={
+                    isStudentRole ? <ExamSession /> : <Navigate to="/" replace />
                 } />
                 <Route path="*" element={<Navigate to="/" replace />} />
              </Routes>
