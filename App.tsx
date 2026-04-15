@@ -67,42 +67,6 @@ const AppContent: React.FC = () => {
     return path as ViewState;
   }, [location.pathname]);
 
-  // Effect to update document title based on current view
-  useEffect(() => {
-    const viewTitles: Record<ViewState, string> = {
-      'dashboard': 'Dashboard',
-      'siswa': 'Data Siswa',
-      'data-lulusan': 'Data Lulusan',
-      'absensi': 'Absensi',
-      'agenda': 'Agenda Kelas',
-      'materi': 'Materi Pembelajaran',
-      'nilai': 'Nilai & Rapor',
-      'administrasi/kelas': 'Administrasi Kelas',
-      'konseling': 'Konseling & Pelanggaran',
-      'kegiatan': 'Ekstrakurikuler',
-      'profil': 'Profil Guru',
-      'pendahuluan': 'Pendahuluan',
-      'sikap': 'Penilaian Sikap',
-      'manajemen-akun': 'Manajemen Akun',
-      'tautan-kepegawaian': 'Tautan Kepegawaian',
-      'laporan-pembelajaran': 'Laporan Pembelajaran',
-      'jurnal-pembelajaran': 'Jurnal Pembelajaran',
-      'dokumentasi-pembelajaran': 'Dokumentasi Pembelajaran',
-      'monitor-siswa': 'Monitor Siswa',
-      'buku-penghubung': 'Buku Penghubung',
-      'cadangan-pemulihan': 'Backup & Restore',
-      'administrasi/bukti-dukung': 'Dokumen Pendukung',
-      'supervisi': 'Supervisi',
-      'administrasi/sarana-prasarana': 'Sarana Prasarana',
-      'administrasi/dana-bos': 'Manajemen BOS',
-      'administrasi/peminjaman-buku': 'Peminjaman Buku',
-      'pengaturan-sumatif': 'Pengaturan Sumatif'
-    };
-
-    const title = viewTitles[currentView] || 'Sistem Akademik';
-    document.title = `${title} | Sistem Akademik & Administrasi Terintegrasi`;
-  }, [currentView]);
-
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -171,6 +135,54 @@ const AppContent: React.FC = () => {
     name: 'Sekolah', npsn: '', address: '', headmaster: '', headmasterNip: '', headmasterSignature: '', year: new Date().getFullYear().toString(), semester: '1',
     developerInfo: { name: '', moto: '', photo: '' }
   });
+
+  // Effect to update document title based on current view and branding
+  useEffect(() => {
+    const viewTitles: Record<ViewState, string> = {
+      'dashboard': 'Dashboard',
+      'siswa': 'Data Siswa',
+      'data-lulusan': 'Data Lulusan',
+      'absensi': 'Absensi',
+      'agenda': 'Agenda Kelas',
+      'materi': 'Materi Pembelajaran',
+      'nilai': 'Nilai & Rapor',
+      'administrasi/kelas': 'Administrasi Kelas',
+      'konseling': 'Konseling & Pelanggaran',
+      'kegiatan': 'Ekstrakurikuler',
+      'profil': 'Profil Guru',
+      'pendahuluan': 'Pendahuluan',
+      'sikap': 'Penilaian Sikap',
+      'manajemen-akun': 'Manajemen Akun',
+      'tautan-kepegawaian': 'Tautan Kepegawaian',
+      'laporan-pembelajaran': 'Laporan Pembelajaran',
+      'jurnal-pembelajaran': 'Jurnal Pembelajaran',
+      'dokumentasi-pembelajaran': 'Dokumentasi Pembelajaran',
+      'monitor-siswa': 'Monitor Siswa',
+      'buku-penghubung': 'Buku Penghubung',
+      'cadangan-pemulihan': 'Backup & Restore',
+      'administrasi/bukti-dukung': 'Dokumen Pendukung',
+      'supervisi': 'Supervisi',
+      'administrasi/sarana-prasarana': 'Sarana Prasarana',
+      'administrasi/dana-bos': 'Manajemen BOS',
+      'administrasi/peminjaman-buku': 'Peminjaman Buku',
+      'pengaturan-sumatif': 'Pengaturan Sumatif'
+    };
+
+    const title = viewTitles[currentView] || 'Sistem Akademik';
+    const appName = schoolProfile?.appName || "SAGARA";
+    document.title = `${title} | ${appName}`;
+    
+    // Update Favicon
+    if (schoolProfile?.appLogo) {
+      let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.getElementsByTagName('head')[0].appendChild(link);
+      }
+      link.href = schoolProfile.appLogo;
+    }
+  }, [currentView, schoolProfile]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -1596,7 +1608,7 @@ const AppContent: React.FC = () => {
   }, [currentUser, activeClassId, liaisonLogs]);
 
   if (!currentUser) {
-      return <Login onLoginSuccess={setCurrentUser} />;
+      return <Login onLoginSuccess={setCurrentUser} schoolProfile={schoolProfile} />;
   }
 
   const isStudentRole = currentUser.role === 'siswa';
@@ -1647,7 +1659,7 @@ const AppContent: React.FC = () => {
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
         <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none overflow-hidden">
             <img 
-              src="https://image2url.com/r2/default/images/1771068223735-6f3b5a3d-5a11-4f2e-9639-10adf921bb50.png"
+              src={schoolProfile?.watermarkLogo || schoolProfile?.appLogo || "https://image2url.com/r2/default/images/1771068223735-6f3b5a3d-5a11-4f2e-9639-10adf921bb50.png"}
               alt="Watermark"
               className="w-[500px] h-[500px] object-contain opacity-5"
             />
@@ -1665,12 +1677,12 @@ const AppContent: React.FC = () => {
             )}
             <div className="flex items-center gap-2 lg:hidden">
                 <img 
-                    src="https://image2url.com/r2/default/images/1770790148258-99f209ea-fd45-44cf-9576-9c5205ef8b20.png" 
-                    alt="Logo SAGARA"
+                    src={schoolProfile?.appLogo || "https://image2url.com/r2/default/images/1770790148258-99f209ea-fd45-44cf-9576-9c5205ef8b20.png"} 
+                    alt={`Logo ${schoolProfile?.appName || "SAGARA"}`}
                     className="h-8 w-8 object-contain"
                 />
                 <h1 className="text-xl font-extrabold tracking-tight flex items-center">
-                    <span className="text-gradient-brand">SAGARA</span>
+                    <span className="text-gradient-brand">{schoolProfile?.appName || "SAGARA"}</span>
                 </h1>
             </div>
 

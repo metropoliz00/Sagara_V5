@@ -278,6 +278,7 @@ export interface SchoolProfileData {
   appTagline?: string;
   appLogo?: string;
   loadingLogo?: string;
+  watermarkLogo?: string;
   footerText?: string;
   developerInfo?: {
     name: string;

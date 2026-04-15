@@ -18,6 +18,7 @@ const SchoolDataTab: React.FC<SchoolDataTabProps> = ({ school, setSchool, onSave
   const [uploadingSchool, setUploadingSchool] = useState(false);
   const [uploadingAppLogo, setUploadingAppLogo] = useState(false);
   const [uploadingLoadingLogo, setUploadingLoadingLogo] = useState(false);
+  const [uploadingWatermarkLogo, setUploadingWatermarkLogo] = useState(false);
   const { showAlert } = useModal();
 
   const academicYears = [
@@ -28,7 +29,7 @@ const SchoolDataTab: React.FC<SchoolDataTabProps> = ({ school, setSchool, onSave
     "2029/2030"
   ];
 
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'regency' | 'school' | 'app' | 'loading') => {
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'regency' | 'school' | 'app' | 'loading' | 'watermark') => {
     if (isReadOnly) return;
     const file = event.target.files?.[0];
     const input = event.target; // Simpan referensi untuk reset
@@ -39,6 +40,7 @@ const SchoolDataTab: React.FC<SchoolDataTabProps> = ({ school, setSchool, onSave
       else if (type === 'school') setUploadingSchool(true);
       else if (type === 'app') setUploadingAppLogo(true);
       else if (type === 'loading') setUploadingLoadingLogo(true);
+      else if (type === 'watermark') setUploadingWatermarkLogo(true);
 
       try {
         // Resize ke 150px (Sangat cukup untuk logo kop surat & muat di spreadsheet)
@@ -53,6 +55,8 @@ const SchoolDataTab: React.FC<SchoolDataTabProps> = ({ school, setSchool, onSave
            setSchool({ ...school, appLogo: resizedBase64 });
         } else if (type === 'loading') {
            setSchool({ ...school, loadingLogo: resizedBase64 });
+        } else if (type === 'watermark') {
+           setSchool({ ...school, watermarkLogo: resizedBase64 });
         }
       } catch (error) {
         console.error("Gagal kompresi logo", error);
@@ -63,6 +67,7 @@ const SchoolDataTab: React.FC<SchoolDataTabProps> = ({ school, setSchool, onSave
         else if (type === 'school') setUploadingSchool(false);
         else if (type === 'app') setUploadingAppLogo(false);
         else if (type === 'loading') setUploadingLoadingLogo(false);
+        else if (type === 'watermark') setUploadingWatermarkLogo(false);
         if (input) input.value = ''; 
       }
     }
@@ -325,6 +330,31 @@ const SchoolDataTab: React.FC<SchoolDataTabProps> = ({ school, setSchool, onSave
                                     type="file" 
                                     accept="image/*" 
                                     onChange={(e) => handleLogoUpload(e, 'loading')} 
+                                    className="block w-full text-xs text-gray-500 file:mr-2 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer" 
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-gray-100">
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Logo Watermark (Halaman Transparan)</label>
+                    <div className="flex items-center space-x-3">
+                        <div className="w-16 h-16 bg-slate-50 border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+                            {uploadingWatermarkLogo ? (
+                                <Loader2 className="animate-spin text-blue-500" size={20} />
+                            ) : school.watermarkLogo ? (
+                                <img src={school.watermarkLogo} alt="Watermark Logo" className="w-full h-full object-contain p-1" />
+                            ) : (
+                                <span className="text-[10px] text-gray-400 text-center">Default</span>
+                            )}
+                        </div>
+                        <div className="flex-1">
+                            {!isReadOnly && (
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    onChange={(e) => handleLogoUpload(e, 'watermark')} 
                                     className="block w-full text-xs text-gray-500 file:mr-2 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer" 
                                 />
                             )}
