@@ -18,6 +18,7 @@ export interface User {
   photo?: string;
   signature?: string;
   studentId?: string;
+  nisn?: string;
 }
 
 export interface Student {
@@ -431,6 +432,7 @@ export interface SumatifAssessment {
   questionCount: number;
   isActive: boolean;
   createdAt: string;
+  durationMinutes?: number;
 }
 
 export interface Question {

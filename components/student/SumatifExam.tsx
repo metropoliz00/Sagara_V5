@@ -25,10 +25,30 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [timeLeft, setTimeLeft] = useState(0); // In seconds
   const [result, setResult] = useState<Partial<StudentExamResult> | null>(null);
+  const [violationCount, setViolationCount] = useState(0);
+  const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
     fetchAssessments();
   }, [activeClassId]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (examState === 'active' && !document.fullscreenElement) {
+        setViolationCount(prev => {
+          const newCount = prev + 1;
+          if (newCount >= 3) {
+            handleSubmitExam(true);
+          } else {
+            setShowWarning(true);
+          }
+          return newCount;
+        });
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, [examState]);
 
   const fetchAssessments = async () => {
     setLoading(true);
@@ -58,15 +78,37 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
     setLoading(true);
     try {
       const allQuestions = await apiService.getQuestions(selectedAssessment.id);
-      // Shuffle and limit questions if needed
+      // Shuffle and limit questions
       const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, selectedAssessment.questionCount);
+      const selected = shuffled.slice(0, selectedAssessment.questionCount).map(q => {
+        if (q.type === 'pilihan-ganda' && q.options) {
+          // Filter empty options and shuffle
+          const validOptions = q.options
+            .map((opt, idx) => ({ opt, img: q.optionImages?.[idx] || '' }))
+            .filter(o => o.opt && o.opt.trim() !== '');
+          const shuffledOptions = validOptions.sort(() => 0.5 - Math.random());
+          return {
+            ...q,
+            options: shuffledOptions.map(o => o.opt),
+            optionImages: shuffledOptions.map(o => o.img)
+          } as Question;
+        }
+        return q as Question;
+      });
       setQuestions(selected);
       setAnswers({});
       setCurrentQuestionIdx(0);
+      setViolationCount(0);
       setExamState('active');
-      // Set timer (e.g., 2 minutes per question)
-      setTimeLeft(selected.length * 120);
+      
+      // Set timer based on durationMinutes or fallback
+      const duration = selectedAssessment.durationMinutes || 60;
+      setTimeLeft(duration * 60);
+
+      // Request fullscreen
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen().catch(e => console.warn("Fullscreen error:", e));
+      }
     } catch (error) {
       console.error("Error starting exam:", error);
     } finally {
@@ -78,12 +120,15 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
 
-  const handleSubmitExam = async () => {
+  const handleSubmitExam = async (force = false) => {
     if (!selectedAssessment || !currentUser) return;
-    if (!window.confirm("Apakah Anda yakin ingin mengakhiri ujian?")) return;
+    if (!force && !window.confirm("Apakah Anda yakin ingin mengakhiri ujian?")) return;
 
     setLoading(true);
     try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen().catch(e => console.warn("Exit fullscreen error:", e));
+      }
       let score = 0;
       let totalPoints = 0;
 
@@ -218,7 +263,7 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
                         <HelpCircle size={14} className="mr-2 text-blue-400" /> {assessment.questionCount} Pertanyaan
                       </div>
                       <div className="flex items-center text-sm text-slate-600">
-                        <Timer size={14} className="mr-2 text-blue-400" /> {assessment.questionCount * 2} Menit
+                        <Timer size={14} className="mr-2 text-blue-400" /> {assessment.durationMinutes || 60} Menit
                       </div>
                     </div>
                     <button 
@@ -300,8 +345,16 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
                 <h3 className="font-bold text-slate-700 border-b pb-2">Informasi Ujian</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Nama Siswa:</span>
+                    <span className="font-bold text-slate-800">{currentUser?.fullName}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">NISN:</span>
+                    <span className="font-bold text-slate-800">{currentUser?.nisn || '-'}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Mata Pelajaran:</span>
-                    <span className="font-bold text-slate-800">{selectedAssessment?.subjectId}</span>
+                    <span className="font-bold text-slate-800 uppercase">{selectedAssessment?.subjectId}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Jumlah Soal:</span>
@@ -309,7 +362,7 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Waktu Pengerjaan:</span>
-                    <span className="font-bold text-slate-800">{selectedAssessment ? selectedAssessment.questionCount * 2 : 0} Menit</span>
+                    <span className="font-bold text-slate-800">{selectedAssessment?.durationMinutes || 60} Menit</span>
                   </div>
                 </div>
               </div>
@@ -317,8 +370,10 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
                 <h3 className="font-bold text-slate-700 border-b pb-2">Instruksi</h3>
                 <ul className="text-sm text-slate-600 space-y-2 list-disc pl-4">
                   <li>Pastikan koneksi internet Anda stabil.</li>
+                  <li>Ujian akan berjalan dalam mode layar penuh (Fullscreen).</li>
+                  <li><strong>DILARANG</strong> keluar dari mode layar penuh. Keluar dari layar penuh akan dihitung sebagai pelanggaran.</li>
+                  <li>Jika melakukan pelanggaran sebanyak 3 kali, ujian akan otomatis diselesaikan.</li>
                   <li>Ujian akan berakhir otomatis jika waktu habis.</li>
-                  <li>Jawaban akan tersimpan setiap kali Anda pindah soal.</li>
                   <li>Klik tombol "Selesai" jika sudah yakin dengan semua jawaban.</li>
                 </ul>
               </div>
@@ -341,22 +396,68 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
             animate={{ opacity: 1 }}
             className="space-y-6"
           >
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center sticky top-4 z-10">
-              <div className="flex items-center space-x-4">
-                <span className="text-sm font-bold text-slate-500">Soal {currentQuestionIdx + 1} dari {questions.length}</span>
-                <div className="h-2 w-32 md:w-64 bg-slate-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-blue-500 transition-all duration-300" 
-                    style={{ width: `${((currentQuestionIdx + 1) / questions.length) * 100}%` }}
-                  />
+            {/* Warning Modal */}
+            {showWarning && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full text-center">
+                  <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <AlertCircle size={40} />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-2">Peringatan Pelanggaran!</h2>
+                  <p className="text-slate-600 mb-4">
+                    Anda telah keluar dari mode layar penuh. Ini adalah pelanggaran ke-{violationCount} dari maksimal 3 pelanggaran.
+                  </p>
+                  <p className="text-sm text-red-500 font-bold mb-8">
+                    Jika Anda melakukan 3 pelanggaran, ujian akan otomatis diakhiri.
+                  </p>
+                  <button 
+                    onClick={async () => {
+                      setShowWarning(false);
+                      if (document.documentElement.requestFullscreen) {
+                        await document.documentElement.requestFullscreen().catch(e => console.warn(e));
+                      }
+                    }}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-2xl transition-all"
+                  >
+                    Kembali ke Ujian
+                  </button>
                 </div>
               </div>
-              <div className={`flex items-center px-4 py-2 rounded-xl font-mono font-bold ${timeLeft < 60 ? 'bg-red-50 text-red-600 animate-pulse' : 'bg-blue-50 text-blue-600'}`}>
-                <Timer size={18} className="mr-2" /> {formatTime(timeLeft)}
+            )}
+
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center sticky top-4 z-10 gap-4">
+              <div className="flex items-center space-x-4 w-full md:w-auto">
+                {currentUser?.photo ? (
+                  <img src={currentUser.photo} alt="Student" className="w-12 h-12 rounded-full object-cover border-2 border-blue-100" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
+                    {currentUser?.fullName?.charAt(0) || 'S'}
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-bold text-slate-800">{currentUser?.fullName}</h3>
+                  <p className="text-xs text-slate-500">NISN: {currentUser?.nisn || '-'}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-4 w-full md:w-auto justify-between md:justify-end">
+                <div className="flex flex-col items-end mr-4">
+                  <span className="text-sm font-bold text-slate-500 mb-1">Soal {currentQuestionIdx + 1} dari {questions.length}</span>
+                  <div className="h-2 w-32 bg-slate-100 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-blue-500 transition-all duration-300" 
+                      style={{ width: `${((currentQuestionIdx + 1) / questions.length) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                <div className={`flex items-center px-4 py-2 rounded-xl font-mono font-bold ${timeLeft < 60 ? 'bg-red-50 text-red-600 animate-pulse' : 'bg-blue-50 text-blue-600'}`}>
+                  <Timer size={18} className="mr-2" /> {formatTime(timeLeft)}
+                </div>
               </div>
             </div>
 
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 min-h-[400px] flex flex-col">
+
               <div className="flex-1">
                 {questions[currentQuestionIdx].imageUrl && (
                   <div className="mb-6 space-y-2">
@@ -476,7 +577,7 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
                 
                 {currentQuestionIdx === questions.length - 1 ? (
                   <button 
-                    onClick={handleSubmitExam}
+                    onClick={() => handleSubmitExam()}
                     disabled={loading}
                     className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg transition-all flex items-center"
                   >

@@ -549,13 +549,22 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700">Jumlah Soal Ditampilkan</label>
                   <input 
                     type="number"
                     value={currentAssessment?.questionCount}
                     onChange={e => setCurrentAssessment(prev => ({ ...prev, questionCount: parseInt(e.target.value) }))}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Durasi (Menit)</label>
+                  <input 
+                    type="number"
+                    value={currentAssessment?.durationMinutes || 60}
+                    onChange={e => setCurrentAssessment(prev => ({ ...prev, durationMinutes: parseInt(e.target.value) }))}
                     className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 </div>
