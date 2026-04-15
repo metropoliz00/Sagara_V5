@@ -28,9 +28,31 @@ const ExamSession: React.FC<ExamSessionProps> = ({ assessmentId: propAssessmentI
   
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
-  const [doubtful, setDoubtful] = useState<Record<string, boolean>>({});
-  const [timeLeft, setTimeLeft] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, any>>(() => {
+    const saved = localStorage.getItem(`exam_answers_${assessmentId}`);
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [doubtful, setDoubtful] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem(`exam_doubtful_${assessmentId}`);
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`exam_answers_${assessmentId}`, JSON.stringify(answers));
+  }, [answers, assessmentId]);
+
+  useEffect(() => {
+    localStorage.setItem(`exam_doubtful_${assessmentId}`, JSON.stringify(doubtful));
+  }, [doubtful, assessmentId]);
+
+  const [timeLeft, setTimeLeft] = useState<number>(() => {
+    const saved = localStorage.getItem(`exam_timeLeft_${assessmentId}`);
+    return saved ? parseInt(saved) : 0;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`exam_timeLeft_${assessmentId}`, timeLeft.toString());
+  }, [timeLeft, assessmentId]);
   const [result, setResult] = useState<Partial<StudentExamResult> | null>(null);
   const [violationCount, setViolationCount] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
@@ -209,6 +231,10 @@ const ExamSession: React.FC<ExamSessionProps> = ({ assessmentId: propAssessmentI
       };
 
       await apiService.saveExamResult(finalResult);
+      
+      localStorage.removeItem(`exam_answers_${assessmentId}`);
+      localStorage.removeItem(`exam_doubtful_${assessmentId}`);
+      localStorage.removeItem(`exam_timeLeft_${assessmentId}`);
 
       const title = assessment.title || '';
       const fieldMap: Record<string, string> = {

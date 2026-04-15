@@ -1535,8 +1535,13 @@ export const apiService = {
       student_name: result.studentName,
       score: result.score,
       total_points: result.totalPoints,
-      answers: result.answers
+      answers: result.answers,
+      completed_at: new Date().toISOString()
     };
-    await supabase.from('exam_results').insert([dbData]);
+    const { error } = await supabase.from('exam_results').insert([dbData]);
+    if (error) {
+      console.error("Error saving exam result:", error);
+      throw error;
+    }
   },
 };
