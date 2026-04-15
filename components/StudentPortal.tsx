@@ -8,13 +8,11 @@ import {
   MapPin, CheckSquare, X, Medal, Heart, MessageCircle, Trophy,
   Edit, Save, Loader2, PlusCircle, History, MessageSquare,
   ClipboardList, Bell, Activity, Sparkles, GraduationCap, ChevronDown,
-  Camera, ChevronLeft, ChevronRight, Award,
+  Camera, ChevronLeft, ChevronRight,
   Sun, Moon, CloudSun, Sunset
 } from 'lucide-react';
 import { apiService } from '../services/apiService';
 import { useModal } from '../context/ModalContext';
-import SumatifExam from './student/SumatifExam';
-import SumatifReview from './student/SumatifReview';
 
 interface StudentPortalProps {
   student: Student;
@@ -34,7 +32,7 @@ interface StudentPortalProps {
   materials?: Material[];
 }
 
-type PortalTab = 'dashboard' | 'attendance' | 'liaison' | 'profile' | 'character' | 'materi' | 'sumatif-exam' | 'sumatif-review';
+type PortalTab = 'dashboard' | 'attendance' | 'liaison' | 'profile' | 'character' | 'materi';
 
 const StudentPortal: React.FC<StudentPortalProps> = ({
   student, allAttendance, grades, liaisonLogs, agendas, behaviorLogs, permissionRequests, karakterAssessments,
@@ -496,7 +494,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
               const code = monthCalendarData[i - 1];
               if (CALENDAR_CODES[code]) {
                   holidayCode = code;
-                  const specificDescription = academicCalendar?.__descriptions__?.[dateStr] || HOLIDAY_DESCRIPTIONS_2025_2026[dateStr];
+                  const specificDescription = HOLIDAY_DESCRIPTIONS_2025_2026[dateStr];
                   holidayLabel = specificDescription || CALENDAR_CODES[code].label;
               }
           } else if (isSunday) {
@@ -523,8 +521,6 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
     { id: 'dashboard', label: 'Ringkasan', icon: LayoutDashboard },
     { id: 'attendance', label: 'Izin & Absensi', icon: Calendar },
     { id: 'materi', label: 'Materi', icon: BookOpen },
-    { id: 'sumatif-exam', label: 'Ujian Sumatif', icon: ClipboardList },
-    { id: 'sumatif-review', label: 'Hasil Sumatif', icon: Award },
     { id: 'liaison', label: 'Buku Penghubung', icon: MessageSquare },
     { id: 'profile', label: 'Profil Siswa', icon: User },
     { id: 'character', label: 'Karakter', icon: HeartHandshake },
@@ -1269,14 +1265,6 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
                       )}
                   </div>
               </div>
-          )}
-
-          {activeTab === 'sumatif-exam' && (
-              <SumatifExam currentUser={student as any} activeClassId={student.classId} />
-          )}
-
-          {activeTab === 'sumatif-review' && (
-              <SumatifReview currentUser={student as any} activeClassId={student.classId} />
           )}
 
           {/* --- LIAISON BOOK TAB --- */}

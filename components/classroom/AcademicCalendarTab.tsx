@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AcademicCalendarData, Holiday } from '../../types';
-import { Calendar, Save, Loader2, RefreshCw, AlertTriangle, X, Lock, Edit2 } from 'lucide-react';
+import { Calendar, Save, Loader2, RefreshCw, AlertTriangle, X, Lock } from 'lucide-react';
 import { CALENDAR_CODES, PREFILLED_CALENDAR_2025, HOLIDAY_DESCRIPTIONS_2025_2026 } from '../../constants';
 
 interface AcademicCalendarTabProps {
@@ -23,7 +23,6 @@ const AcademicCalendarTab: React.FC<AcademicCalendarTabProps> = ({ initialData, 
   const [isSyncing, setIsSyncing] = useState(false);
   const [isActionsVisible, setIsActionsVisible] = useState(true);
   const [isLegendVisible, setIsLegendVisible] = useState(true);
-  const [editingDescription, setEditingDescription] = useState<{date: string, code: string, currentDesc: string, defaultDesc: string} | null>(null);
 
   useEffect(() => {
     // Prioritaskan data dari backend.
@@ -84,16 +83,15 @@ const AcademicCalendarTab: React.FC<AcademicCalendarTabProps> = ({ initialData, 
       const newHolidays: Omit<Holiday, 'id'>[] = [];
       
       for (const yearMonthKey in localData) {
-          if (yearMonthKey === '__descriptions__') continue;
           const [year, month] = yearMonthKey.split('-').map(Number);
           const dayContents = localData[yearMonthKey];
           
-          dayContents.forEach((content: any, index: number) => {
+          dayContents.forEach((content, index) => {
               const day = index + 1;
               // FILTER UPDATE: Exclude 'LU' (Libur Umum/Minggu) from being synced to database
               if (content && HOLIDAY_CODES.includes(content) && content !== 'LU') {
                   const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                  const specificDescription = localData.__descriptions__?.[date] || HOLIDAY_DESCRIPTIONS_2025_2026[date];
+                  const specificDescription = HOLIDAY_DESCRIPTIONS_2025_2026[date];
                   const codeInfo = CALENDAR_CODES[content];
                   
                   newHolidays.push({
@@ -115,40 +113,6 @@ const AcademicCalendarTab: React.FC<AcademicCalendarTabProps> = ({ initialData, 
           setIsSyncing(false);
       }
   };
-
-  const handleDescriptionChange = (date: string, description: string) => {
-      setLocalData(prev => ({
-          ...prev,
-          __descriptions__: {
-              ...(prev.__descriptions__ || {}),
-              [date]: description
-          }
-      }));
-  };
-
-  const holidayDates = useMemo(() => {
-      const dates: { date: string, code: string, defaultDesc: string, customDesc?: string }[] = [];
-      for (const yearMonthKey in localData) {
-          if (yearMonthKey === '__descriptions__') continue;
-          const [year, month] = yearMonthKey.split('-').map(Number);
-          const dayContents = localData[yearMonthKey] as (string | null)[];
-          if (!dayContents) continue;
-          
-          dayContents.forEach((content, index) => {
-              const day = index + 1;
-              if (content && HOLIDAY_CODES.includes(content) && content !== 'LU') {
-                  const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                  dates.push({
-                      date,
-                      code: content,
-                      defaultDesc: HOLIDAY_DESCRIPTIONS_2025_2026[date] || CALENDAR_CODES[content]?.label || '',
-                      customDesc: localData.__descriptions__?.[date]
-                  });
-              }
-          });
-      }
-      return dates.sort((a, b) => a.date.localeCompare(b.date));
-  }, [localData]);
 
   return (
     <div className="flex flex-col xl:flex-row gap-6">
@@ -191,49 +155,22 @@ const AcademicCalendarTab: React.FC<AcademicCalendarTabProps> = ({ initialData, 
                                     const content = monthData[day - 1] || '';
                                     const codeInfo = CALENDAR_CODES[content];
                                     const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                    const specificDescription = localData.__descriptions__?.[dateString] || HOLIDAY_DESCRIPTIONS_2025_2026[dateString];
+                                    const specificDescription = HOLIDAY_DESCRIPTIONS_2025_2026[dateString];
                                     let tooltipText = '';
                                     if (codeInfo) {
                                         tooltipText = specificDescription || codeInfo.label;
                                     }
 
                                     return (
-                                        <td key={day} className={`p-0 border relative group ${isDisabled ? 'bg-gray-200' : ''}`} title={tooltipText}>
+                                        <td key={day} className={`p-0 border ${isDisabled ? 'bg-gray-200' : ''}`} title={tooltipText}>
                                             {!isDisabled && (
-                                                <>
-                                                    <input
-                                                        type="text"
-                                                        value={content}
-                                                        onChange={(e) => handleCellChange(year, month, day, e.target.value)}
-                                                        onDoubleClick={() => {
-                                                            if (isReadOnly || !codeInfo || content === 'LU') return;
-                                                            setEditingDescription({
-                                                                date: dateString,
-                                                                code: content,
-                                                                currentDesc: localData.__descriptions__?.[dateString] || '',
-                                                                defaultDesc: HOLIDAY_DESCRIPTIONS_2025_2026[dateString] || codeInfo.label
-                                                            });
-                                                        }}
-                                                        className={`w-full h-full text-center outline-none focus:ring-2 focus:ring-indigo-500 font-bold ${codeInfo ? codeInfo.color : 'bg-white text-gray-700'} ${isReadOnly ? 'cursor-not-allowed' : ''}`}
-                                                        disabled={isReadOnly}
-                                                    />
-                                                    {codeInfo && content !== 'LU' && !isReadOnly && (
-                                                        <div 
-                                                            className="absolute -top-1 -right-1 bg-white rounded-full shadow cursor-pointer hidden group-hover:flex items-center justify-center border border-gray-300 p-0.5 z-10 w-4 h-4"
-                                                            onClick={() => {
-                                                                setEditingDescription({
-                                                                    date: dateString,
-                                                                    code: content,
-                                                                    currentDesc: localData.__descriptions__?.[dateString] || '',
-                                                                    defaultDesc: HOLIDAY_DESCRIPTIONS_2025_2026[dateString] || codeInfo.label
-                                                                });
-                                                            }}
-                                                            title="Edit Keterangan"
-                                                        >
-                                                            <Edit2 size={10} className="text-indigo-600" />
-                                                        </div>
-                                                    )}
-                                                </>
+                                                <input
+                                                    type="text"
+                                                    value={content}
+                                                    onChange={(e) => handleCellChange(year, month, day, e.target.value)}
+                                                    className={`w-full h-full text-center outline-none focus:ring-2 focus:ring-indigo-500 font-bold ${codeInfo ? codeInfo.color : 'bg-white text-gray-700'} ${isReadOnly ? 'cursor-not-allowed' : ''}`}
+                                                    disabled={isReadOnly}
+                                                />
                                             )}
                                         </td>
                                     );
@@ -297,58 +234,6 @@ const AcademicCalendarTab: React.FC<AcademicCalendarTabProps> = ({ initialData, 
                 )}
             </div>
         </div>
-
-        {editingDescription && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-                <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
-                    <h3 className="text-lg font-bold mb-4 text-gray-800">Edit Keterangan Libur</h3>
-                    <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <p className="text-sm text-gray-600 mb-2 flex justify-between">
-                            <span>Tanggal:</span>
-                            <span className="font-semibold text-gray-800">{editingDescription.date}</span>
-                        </p>
-                        <p className="text-sm text-gray-600 flex justify-between items-center">
-                            <span>Kode:</span>
-                            <span className={`text-xs px-2 py-1 rounded-full font-bold ${CALENDAR_CODES[editingDescription.code]?.color || 'bg-gray-200 text-gray-700'}`}>
-                                {editingDescription.code}
-                            </span>
-                        </p>
-                    </div>
-                    <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Keterangan Khusus</label>
-                        <input 
-                            type="text" 
-                            value={editingDescription.currentDesc} 
-                            onChange={(e) => setEditingDescription({...editingDescription, currentDesc: e.target.value})}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                            placeholder={editingDescription.defaultDesc}
-                            autoFocus
-                        />
-                        <p className="text-xs text-gray-500 mt-2">
-                            Kosongkan untuk menggunakan keterangan default: <br/>
-                            <span className="italic">{editingDescription.defaultDesc}</span>
-                        </p>
-                    </div>
-                    <div className="flex justify-end gap-3">
-                        <button 
-                            onClick={() => setEditingDescription(null)}
-                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
-                        >
-                            Batal
-                        </button>
-                        <button 
-                            onClick={() => {
-                                handleDescriptionChange(editingDescription.date, editingDescription.currentDesc);
-                                setEditingDescription(null);
-                            }}
-                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors shadow-sm"
-                        >
-                            Simpan Keterangan
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
     </div>
   );
 };

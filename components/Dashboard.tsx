@@ -383,12 +383,12 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="relative z-10 space-y-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="relative">
-            <h1 className="text-2xl font-bold text-gray-800 flex items-center mt-2">
+            <div>
+            <h1 className="text-2xl font-bold text-gray-800 flex items-center">
               {getGreetingIcon(getGreeting())}
               <span>Selamat {getGreeting()}, <span className="text-[#5AB2FF]">{(teacherName && teacherName !== 'undefined') ? teacherName : 'Bapak/Ibu Guru'}</span> 👋</span>
             </h1>
-            <p className="text-gray-500 text-sm mt-1">Selamat datang di Aplikasi {schoolProfile?.appName || "SAGARA"} | Sistem Akademik & Administrasi Terintegrasi. Berikut adalah ringkasan aktivitas {teachingClass ? `Kelas ${teachingClass}` : 'Sekolah'} hari ini.</p>
+            <p className="text-gray-500 text-sm mt-1">Selamat datang di Aplikasi SAGARA | Sistem Akademik & Administrasi Terintegrasi. Berikut adalah ringkasan aktivitas {teachingClass ? `Kelas ${teachingClass}` : 'Sekolah'} hari ini.</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
             <button 

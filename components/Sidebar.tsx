@@ -4,10 +4,9 @@ import {
   LayoutDashboard, Users, CalendarCheck, GraduationCap, School, LogOut, X, ChevronRight, ChevronLeft,
   UserCog, HeartHandshake, Tent, BookText, Smile, Link2, FileText, Contact, BookOpen, 
   UserCheck, Database, NotebookPen, Files, Activity, Building, Wallet, Camera, Book,
-  Star, FolderOpen, BookOpenCheck, UsersRound, Briefcase, Settings, Award, ListTodo,
-  ClipboardList
+  Star, FolderOpen, BookOpenCheck, UsersRound, Briefcase, Settings, Award, ListTodo
 } from 'lucide-react';
-import { User, SchoolProfileData, ViewState } from '../types';
+import { ViewState, User } from '../types';
 
 interface SidebarProps {
   currentUser: User | null;
@@ -15,7 +14,6 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onLogout: () => void;
-  schoolProfile?: SchoolProfileData;
 }
 
 // 1. Dashboard dipisahkan sebagai item mandiri
@@ -53,7 +51,6 @@ const menuGroups = [
       { id: 'jurnal-pembelajaran', label: 'Jurnal Pembelajaran', icon: NotebookPen, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'laporan-pembelajaran', label: 'Laporan Pembelajaran', icon: FileText, roles: ['admin', 'guru', 'supervisor'] },
       { id: 'dokumentasi-pembelajaran', label: 'Dokumentasi Pembelajaran', icon: Camera, roles: ['admin', 'guru', 'supervisor'] },
-      { id: 'pengaturan-sumatif', label: 'Pengaturan Sumatif', icon: ClipboardList, roles: ['admin', 'guru'] },
     ]
   },
   {
@@ -89,7 +86,7 @@ const menuGroups = [
   }
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onClose, onLogout, schoolProfile }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onClose, onLogout }) => {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -180,20 +177,18 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onC
             <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
               <div className="w-12 h-12 flex items-center justify-center shrink-0">
                 <img 
-                  src={schoolProfile?.appLogo || "https://png.pngtree.com/png-clipart/20230928/original/pngtree-education-school-logo-design-kids-student-learning-vector-png-image_12898111.png"} 
-                  alt={`Logo ${schoolProfile?.appName || "SAGARA"}`} 
+                  src="https://png.pngtree.com/png-clipart/20230928/original/pngtree-education-school-logo-design-kids-student-learning-vector-png-image_12898111.png" 
+                  alt="Logo SAGARA" 
                   className="w-full h-full object-contain animate-float"
                 />
               </div>
               {!isCollapsed && (
                 <div className="flex flex-col overflow-hidden">
                   <h1 className="text-xl font-extrabold tracking-tight text-slate-800 flex items-center">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5AB2FF] to-[#A0DEFF]">
-                      {schoolProfile?.appName || "SAGARA"}
-                    </span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5AB2FF] to-[#A0DEFF]">SAGARA</span>
                   </h1>
                   <span className="text-xs font-medium text-slate-400 mt-0.5 truncate">
-                      {schoolProfile?.name || "UPT SD Negeri Remen 2"}
+                      UPT SD Negeri Remen 2
                   </span>
                 </div>
               )}
@@ -247,7 +242,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onC
                   )}
                 </button>
                 
-                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isGroupOpen ? 'max-h-[1000px]' : 'max-h-0'}`}>
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isGroupOpen ? 'max-h-96' : 'max-h-0'}`}>
                   <div className="pt-1 space-y-1">
                     {visibleItems.map(item => renderMenuItem(item))}
                   </div>

@@ -18,7 +18,6 @@ export interface User {
   photo?: string;
   signature?: string;
   studentId?: string;
-  nisn?: string;
 }
 
 export interface Student {
@@ -275,12 +274,6 @@ export interface SchoolProfileData {
   runningText?: string;
   runningTextSpeed?: number;
   headmasterSignature?: string;
-  appName?: string;
-  appTagline?: string;
-  appLogo?: string;
-  loadingLogo?: string;
-  watermarkLogo?: string;
-  footerText?: string;
   developerInfo?: {
     name: string;
     moto: string;
@@ -289,8 +282,7 @@ export interface SchoolProfileData {
 }
 
 export interface AcademicCalendarData {
-  __descriptions__?: { [date: string]: string };
-  [yearMonth: string]: any;
+  [yearMonth: string]: (string | null)[];
 }
 
 export interface OrganizationStructure {
@@ -419,46 +411,7 @@ export type ViewState =
   | 'supervisi'
   | 'administrasi/sarana-prasarana'
   | 'administrasi/dana-bos'
-  | 'administrasi/peminjaman-buku'
-  | 'pengaturan-sumatif';
-
-export interface SumatifAssessment {
-  id: string;
-  classId: string;
-  subjectId: string;
-  title: string;
-  learningObjectives: string;
-  token: string;
-  questionCount: number;
-  isActive: boolean;
-  createdAt: string;
-  durationMinutes?: number;
-}
-
-export interface Question {
-  id: string;
-  assessmentId: string;
-  type: 'pilihan-ganda' | 'pilihan-ganda-kompleks' | 'benar-salah';
-  text: string;
-  imageUrl?: string;
-  imageCaption?: string;
-  options?: string[]; // For multiple choice
-  optionImages?: string[]; // Parallel array to options
-  correctAnswer: string | string[] | Record<string, string>; // Single string for PG/BS, array for PGK, object for multiple BS
-  points: number;
-  order: number;
-}
-
-export interface StudentExamResult {
-  id: string;
-  assessmentId: string;
-  studentId: string;
-  studentName: string;
-  score: number;
-  totalPoints: number;
-  answers: Record<string, any>; // questionId -> student's answer
-  completedAt: string;
-}
+  | 'administrasi/peminjaman-buku';
 
 export interface BookLoan {
   id: string;

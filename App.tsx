@@ -1,7 +1,6 @@
 // ... (imports remain the same)
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from './services/supabaseClient';
 import Sidebar from './components/Sidebar';
 import DashboardContainer from './components/DashboardContainer';
 import StudentList from './components/StudentList';
@@ -31,10 +30,9 @@ import BookLoanView from './components/BookLoanView';
 import GraduatesView from './components/GraduatesView';
 import AgendaView from './components/AgendaView';
 import MaterialsView from './components/MaterialsView';
-import SumatifAdmin from './components/SumatifAdmin';
 import CustomModal from './components/CustomModal'; 
 import PaperPlaneIcon from './components/PaperPlaneIcon';
-import { ViewState, Student, AgendaItem, Material, Extracurricular, BehaviorLog, GradeRecord, TeacherProfileData, SchoolProfileData, User, Holiday, SikapAssessment, KarakterAssessment, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, LearningJournalEntry, SupportDocument, InventoryItem, SchoolAsset, BOSTransaction, LearningDocumentation, BookLoan, BookInventory, SumatifAssessment, StudentExamResult } from './types';
+import { ViewState, Student, AgendaItem, Material, Extracurricular, BehaviorLog, GradeRecord, TeacherProfileData, SchoolProfileData, User, Holiday, SikapAssessment, KarakterAssessment, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, LearningJournalEntry, SupportDocument, InventoryItem, SchoolAsset, BOSTransaction, LearningDocumentation, BookLoan, BookInventory } from './types';
 import { MOCK_SUBJECTS, MOCK_STUDENTS, MOCK_EXTRACURRICULARS } from './constants';
 import { apiService } from './services/apiService';
 import { cacheService } from './src/services/cacheService';
@@ -67,6 +65,41 @@ const AppContent: React.FC = () => {
     return path as ViewState;
   }, [location.pathname]);
 
+  // Effect to update document title based on current view
+  useEffect(() => {
+    const viewTitles: Record<ViewState, string> = {
+      'dashboard': 'Dashboard',
+      'siswa': 'Data Siswa',
+      'data-lulusan': 'Data Lulusan',
+      'absensi': 'Absensi',
+      'agenda': 'Agenda Kelas',
+      'materi': 'Materi Pembelajaran',
+      'nilai': 'Nilai & Rapor',
+      'administrasi/kelas': 'Administrasi Kelas',
+      'konseling': 'Konseling & Pelanggaran',
+      'kegiatan': 'Ekstrakurikuler',
+      'profil': 'Profil Guru',
+      'pendahuluan': 'Pendahuluan',
+      'sikap': 'Penilaian Sikap',
+      'manajemen-akun': 'Manajemen Akun',
+      'tautan-kepegawaian': 'Tautan Kepegawaian',
+      'laporan-pembelajaran': 'Laporan Pembelajaran',
+      'jurnal-pembelajaran': 'Jurnal Pembelajaran',
+      'dokumentasi-pembelajaran': 'Dokumentasi Pembelajaran',
+      'monitor-siswa': 'Monitor Siswa',
+      'buku-penghubung': 'Buku Penghubung',
+      'cadangan-pemulihan': 'Backup & Restore',
+      'administrasi/bukti-dukung': 'Dokumen Pendukung',
+      'supervisi': 'Supervisi',
+      'administrasi/sarana-prasarana': 'Sarana Prasarana',
+      'administrasi/dana-bos': 'Manajemen BOS',
+      'administrasi/peminjaman-buku': 'Peminjaman Buku'
+    };
+
+    const title = viewTitles[currentView] || 'Sistem Akademik';
+    document.title = `${title} | Sistem Akademik & Administrasi Terintegrasi`;
+  }, [currentView]);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -98,8 +131,6 @@ const AppContent: React.FC = () => {
   const [schoolAssets, setSchoolAssets] = useState<SchoolAsset[]>(() => cacheService.get<SchoolAsset[]>('schoolAssets') || []);
   const [bosTransactions, setBosTransactions] = useState<BOSTransaction[]>(() => cacheService.get<BOSTransaction[]>('bosTransactions') || []);
   const [bookLoans, setBookLoans] = useState<BookLoan[]>(() => cacheService.get<BookLoan[]>('bookLoans') || []);
-  const [sumatifAssessments, setSumatifAssessments] = useState<SumatifAssessment[]>([]);
-  const [examResults, setExamResults] = useState<StudentExamResult[]>([]);
   const [kktpMap, setKktpMap] = useState<Record<string, number>>({});
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error' | 'warning'} | null>(null);
   
@@ -135,58 +166,9 @@ const AppContent: React.FC = () => {
     name: 'Sekolah', npsn: '', address: '', headmaster: '', headmasterNip: '', headmasterSignature: '', year: new Date().getFullYear().toString(), semester: '1',
     developerInfo: { name: '', moto: '', photo: '' }
   });
-
-  // Effect to update document title based on current view and branding
-  useEffect(() => {
-    const viewTitles: Record<ViewState, string> = {
-      'dashboard': 'Dashboard',
-      'siswa': 'Data Siswa',
-      'data-lulusan': 'Data Lulusan',
-      'absensi': 'Absensi',
-      'agenda': 'Agenda Kelas',
-      'materi': 'Materi Pembelajaran',
-      'nilai': 'Nilai & Rapor',
-      'administrasi/kelas': 'Administrasi Kelas',
-      'konseling': 'Konseling & Pelanggaran',
-      'kegiatan': 'Ekstrakurikuler',
-      'profil': 'Profil Guru',
-      'pendahuluan': 'Pendahuluan',
-      'sikap': 'Penilaian Sikap',
-      'manajemen-akun': 'Manajemen Akun',
-      'tautan-kepegawaian': 'Tautan Kepegawaian',
-      'laporan-pembelajaran': 'Laporan Pembelajaran',
-      'jurnal-pembelajaran': 'Jurnal Pembelajaran',
-      'dokumentasi-pembelajaran': 'Dokumentasi Pembelajaran',
-      'monitor-siswa': 'Monitor Siswa',
-      'buku-penghubung': 'Buku Penghubung',
-      'cadangan-pemulihan': 'Backup & Restore',
-      'administrasi/bukti-dukung': 'Dokumen Pendukung',
-      'supervisi': 'Supervisi',
-      'administrasi/sarana-prasarana': 'Sarana Prasarana',
-      'administrasi/dana-bos': 'Manajemen BOS',
-      'administrasi/peminjaman-buku': 'Peminjaman Buku',
-      'pengaturan-sumatif': 'Pengaturan Sumatif'
-    };
-
-    const title = viewTitles[currentView] || 'Sistem Akademik';
-    const appName = schoolProfile?.appName || "SAGARA";
-    document.title = `${title} | ${appName}`;
-    
-    // Update Favicon
-    if (schoolProfile?.appLogo) {
-      let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.getElementsByTagName('head')[0].appendChild(link);
-      }
-      link.href = schoolProfile.appLogo;
-    }
-  }, [currentView, schoolProfile]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
-  const [dbStatus, setDbStatus] = useState<{ ok: boolean; message: string }>({ ok: false, message: 'Mengecek koneksi...' });
 
   // ... (Rest of Modal Helper Functions and Persistence Effects) ...
   const showAlert = (message: string, type: 'success' | 'error' | 'alert' = 'alert', title?: string) => {
@@ -1321,40 +1303,6 @@ const AppContent: React.FC = () => {
     });
   };
 
-  // Real-time Database Subscriptions
-  useEffect(() => {
-    const checkDb = async () => {
-      const status = await apiService.checkConnection();
-      setDbStatus(status);
-      if (!status.ok && apiService.isConfigured()) {
-        handleShowNotification(status.message, 'error');
-      }
-    };
-    checkDb();
-
-    if (!currentUser || !apiService.isConfigured()) return;
-
-    const tables = [
-      'users', 'students', 'agendas', 'materials', 'grades', 
-      'counseling_logs', 'extracurriculars', 'holidays', 
-      'attendance', 'sikap_assessments', 'karakter_assessments',
-      'liaison_logs', 'permission_requests', 'book_loans', 'sumatif_assessments'
-    ];
-
-    const channels = tables.map(table => {
-      return apiService.subscribe(table, () => {
-        console.log(`Real-time update from ${table}`);
-        fetchData(true, true); // Silent refresh
-      });
-    });
-
-    return () => {
-      channels.forEach(channel => {
-        if (channel) supabase.removeChannel(channel);
-      });
-    };
-  }, [currentUser]);
-
   const fetchData = async (forceRefresh = false, silent = false) => {
     if (!currentUser) return;
 
@@ -1404,8 +1352,6 @@ const AppContent: React.FC = () => {
         apiService.getSupportDocuments(currentUser),
         apiService.getBookLoans(currentUser),
         apiService.getClassConfig(classIdToFetch),
-        apiService.getSumatifAssessments(classIdToFetch),
-        apiService.getExamResults('ALL'), // Fetch all results for admin/teacher
       ];
 
       // Add inventory fetch if admin/supervisor
@@ -1440,9 +1386,7 @@ const AppContent: React.FC = () => {
       const [
           fUsers, fStudents, fAgendas, fMaterials, fGrades, fCounseling, fExtracurriculars, 
           fProfiles, fHolidays, fAttendance, fSikap, fKarakter, fLinks, fReports, 
-          fLearningDocs, fLiaison, fPermissions, fSupportDocs, fBookLoans, fClassConfig,
-          fSumatif, fExamResults,
-          fInventory, fSchoolAssets, fBOS,
+          fLearningDocs, fLiaison, fPermissions, fSupportDocs, fBookLoans, fClassConfig, fInventory, fSchoolAssets, fBOS,
           _delay // Placeholder for minDelay
       ] = results;
       
@@ -1463,8 +1407,6 @@ const AppContent: React.FC = () => {
       if (fLiaison !== null) setLiaisonLogs(Array.isArray(fLiaison) ? fLiaison as LiaisonLog[] : []);
       if (fSupportDocs !== null) setSupportDocuments(Array.isArray(fSupportDocs) ? fSupportDocs as SupportDocument[] : []);
       if (fBookLoans !== null) setBookLoans(Array.isArray(fBookLoans) ? fBookLoans as BookLoan[] : []);
-      if (fSumatif !== null) setSumatifAssessments(Array.isArray(fSumatif) ? fSumatif as SumatifAssessment[] : []);
-      if (fExamResults !== null) setExamResults(Array.isArray(fExamResults) ? fExamResults as StudentExamResult[] : []);
       
       // Set global inventory state
       if (fInventory !== null && Array.isArray(fInventory)) {
@@ -1608,7 +1550,7 @@ const AppContent: React.FC = () => {
   }, [currentUser, activeClassId, liaisonLogs]);
 
   if (!currentUser) {
-      return <Login onLoginSuccess={setCurrentUser} schoolProfile={schoolProfile} />;
+      return <Login onLoginSuccess={setCurrentUser} />;
   }
 
   const isStudentRole = currentUser.role === 'siswa';
@@ -1627,12 +1569,12 @@ const AppContent: React.FC = () => {
          <div className="relative w-24 h-24 flex items-center justify-center mb-6 animate-bounce">
             <div className="absolute inset-0 bg-[#A0DEFF]/30 rounded-full blur-2xl opacity-60 animate-pulse"></div>
             <img 
-              src={schoolProfile?.loadingLogo || "https://image2url.com/r2/default/images/1770790148258-99f209ea-fd45-44cf-9576-9c5205ef8b20.png"} 
-              alt={`Logo ${schoolProfile?.appName || "SAGARA"}`} 
+              src="https://image2url.com/r2/default/images/1770790148258-99f209ea-fd45-44cf-9576-9c5205ef8b20.png" 
+              alt="Logo SAGARA" 
               className="w-full h-full object-contain drop-shadow-xl"
             />
          </div>
-         <h2 className="text-xl font-bold text-slate-700 mb-2">Menyiapkan Data {schoolProfile?.appName || "SAGARA"}...</h2>
+         <h2 className="text-xl font-bold text-slate-700 mb-2">Menyiapkan Data Kelas...</h2>
          <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-[#5AB2FF] rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
             <div className="w-2 h-2 bg-[#5AB2FF] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
@@ -1652,14 +1594,13 @@ const AppContent: React.FC = () => {
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
           onLogout={handleLogout}
-          schoolProfile={schoolProfile}
         />
       )}
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
         <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none overflow-hidden">
             <img 
-              src={schoolProfile?.watermarkLogo || schoolProfile?.appLogo || "https://image2url.com/r2/default/images/1771068223735-6f3b5a3d-5a11-4f2e-9639-10adf921bb50.png"}
+              src="https://image2url.com/r2/default/images/1771068223735-6f3b5a3d-5a11-4f2e-9639-10adf921bb50.png"
               alt="Watermark"
               className="w-[500px] h-[500px] object-contain opacity-5"
             />
@@ -1677,12 +1618,12 @@ const AppContent: React.FC = () => {
             )}
             <div className="flex items-center gap-2 lg:hidden">
                 <img 
-                    src={schoolProfile?.appLogo || "https://image2url.com/r2/default/images/1770790148258-99f209ea-fd45-44cf-9576-9c5205ef8b20.png"} 
-                    alt={`Logo ${schoolProfile?.appName || "SAGARA"}`}
+                    src="https://image2url.com/r2/default/images/1770790148258-99f209ea-fd45-44cf-9576-9c5205ef8b20.png" 
+                    alt="Logo SAGARA"
                     className="h-8 w-8 object-contain"
                 />
                 <h1 className="text-xl font-extrabold tracking-tight flex items-center">
-                    <span className="text-gradient-brand">{schoolProfile?.appName || "SAGARA"}</span>
+                    <span className="text-gradient-brand">SAGARA</span>
                 </h1>
             </div>
 
@@ -2067,13 +2008,6 @@ const AppContent: React.FC = () => {
                         isDemoMode={isDemoMode}
                         classId={activeClassId}
                         onShowNotification={handleShowNotification}
-                    />
-                } />
-                <Route path="/pengaturan-sumatif" element={
-                    isStudentRole ? <Navigate to="/" replace /> :
-                    <SumatifAdmin 
-                        currentUser={currentUser}
-                        activeClassId={activeClassId}
                     />
                 } />
                 <Route path="/administrasi/sarana-prasarana" element={

@@ -6,8 +6,7 @@ import {
   ScheduleItem, PiketGroup, SikapAssessment, KarakterAssessment, SeatingLayouts, 
   AcademicCalendarData, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, 
   LearningJournalEntry, SupportDocument, OrganizationStructure, SchoolAsset, 
-  BOSTransaction, LearningDocumentation, BookLoan, BookInventory, Graduate, Material,
-  SumatifAssessment, Question, StudentExamResult
+  BOSTransaction, LearningDocumentation, BookLoan, BookInventory, Graduate, Material
 } from '../types';
 
 const isApiConfigured = () => {
@@ -16,31 +15,6 @@ const isApiConfigured = () => {
 
 export const apiService = {
   isConfigured: isApiConfigured,
-  
-  // --- Real-time Subscription ---
-  subscribe: (table: string, callback: (payload: any) => void) => {
-    if (!supabase || !isApiConfigured()) return null;
-    return supabase
-      .channel(`public:${table}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table }, callback)
-      .subscribe();
-  },
-
-  checkConnection: async (): Promise<{ ok: boolean; message: string }> => {
-    if (!isApiConfigured()) return { ok: false, message: 'Konfigurasi Supabase (URL/Key) belum diatur di environment.' };
-    if (!supabase) return { ok: false, message: 'Client Supabase gagal diinisialisasi.' };
-    
-    try {
-      const { error } = await supabase.from('users').select('id').limit(1);
-      if (error) {
-        if (error.code === 'PGRST116') return { ok: true, message: 'Terhubung (Tabel kosong)' };
-        return { ok: false, message: `Error Database: ${error.message} (Code: ${error.code})` };
-      }
-      return { ok: true, message: 'Terhubung ke Database' };
-    } catch (e: any) {
-      return { ok: false, message: `Koneksi Gagal: ${e.message}` };
-    }
-  },
 
   // --- Auth & Users ---
   login: async (username: string, password?: string): Promise<User | null> => {
@@ -52,20 +26,12 @@ export const apiService = {
       .single();
     
     if (error || !data) return null;
-
-    let nisn = undefined;
-    if (data.role === 'siswa' && data.student_id) {
-      const { data: studentData } = await supabase.from('students').select('nisn').eq('id', data.student_id).single();
-      if (studentData) nisn = studentData.nisn;
-    }
-
     return {
       ...data,
       fullName: data.full_name,
       birthInfo: data.birth_info,
       classId: data.class_id,
-      studentId: data.student_id,
-      nisn
+      studentId: data.student_id
     } as User;
   },
 
@@ -77,20 +43,12 @@ export const apiService = {
       .single();
     
     if (error || !data) return null;
-
-    let nisn = undefined;
-    if (data.role === 'siswa' && data.student_id) {
-      const { data: studentData } = await supabase.from('students').select('nisn').eq('id', data.student_id).single();
-      if (studentData) nisn = studentData.nisn;
-    }
-
     return {
       ...data,
       fullName: data.full_name,
       birthInfo: data.birth_info,
       classId: data.class_id,
-      studentId: data.student_id,
-      nisn
+      studentId: data.student_id
     } as User;
   },
 
@@ -284,12 +242,8 @@ export const apiService = {
 
   // --- Students ---
   getStudents: async (currentUser: User | null): Promise<Student[]> => {
-    if (!supabase || !isApiConfigured()) return [];
     const { data, error } = await supabase.from('students').select('*');
-    if (error) {
-      console.error("Error fetching students:", error);
-      return [];
-    }
+    if (error) return [];
     return data.map((s: any) => ({
       ...s,
       classId: s.class_id,
@@ -597,27 +551,17 @@ export const apiService = {
     
     await supabase.from('class_config').upsert({ class_id: historyId, data: currentData }, { onConflict: 'class_id' });
   },
-  saveGrade: async (studentId: string, subjectId: string, gradeData: Partial<GradeData>, classId: string): Promise<void> => {
-    // 1. Get existing grade if any
-    const { data: existing } = await supabase
-      .from('grades')
-      .select('*')
-      .eq('student_id', studentId)
-      .eq('subject_id', subjectId)
-      .single();
-
-    const mergedData = {
+  saveGrade: async (studentId: string, subjectId: string, gradeData: GradeData, classId: string): Promise<void> => {
+    const { error } = await supabase.from('grades').upsert({
       student_id: studentId,
       subject_id: subjectId,
       class_id: classId,
-      sum1: gradeData.sum1 !== undefined ? gradeData.sum1 : (existing?.sum1 ?? null),
-      sum2: gradeData.sum2 !== undefined ? gradeData.sum2 : (existing?.sum2 ?? null),
-      sum3: gradeData.sum3 !== undefined ? gradeData.sum3 : (existing?.sum3 ?? null),
-      sum4: gradeData.sum4 !== undefined ? gradeData.sum4 : (existing?.sum4 ?? null),
-      sas: gradeData.sas !== undefined ? gradeData.sas : (existing?.sas ?? null),
-    };
-
-    const { error } = await supabase.from('grades').upsert(mergedData, { onConflict: 'student_id,subject_id' });
+      sum1: gradeData.sum1,
+      sum2: gradeData.sum2,
+      sum3: gradeData.sum3,
+      sum4: gradeData.sum4,
+      sas: gradeData.sas
+    }, { onConflict: 'student_id,subject_id' });
     if (error) console.error('Error saving grade:', error);
   },
 
@@ -1362,173 +1306,5 @@ export const apiService = {
   },
   restoreData: async (data: any): Promise<any> => {
     return { message: 'Restore logic needs implementation' };
-  },
-
-  // --- Sumatif Assessments ---
-  getSumatifAssessments: async (classId: string): Promise<SumatifAssessment[]> => {
-    const { data, error } = await supabase
-      .from('sumatif_assessments')
-      .select('*')
-      .eq('class_id', classId);
-    
-    if (error) return [];
-    return data.map((a: any) => ({
-      ...a,
-      classId: a.class_id,
-      subjectId: a.subject_id,
-      learningObjectives: a.learning_objectives,
-      questionCount: Number(a.question_count),
-      isActive: a.is_active,
-      createdAt: a.created_at
-    }));
-  },
-
-  saveSumatifAssessment: async (assessment: Partial<SumatifAssessment>): Promise<SumatifAssessment> => {
-    const dbData = {
-      class_id: assessment.classId,
-      subject_id: assessment.subjectId,
-      title: assessment.title,
-      learning_objectives: assessment.learningObjectives,
-      token: assessment.token,
-      question_count: assessment.questionCount,
-      is_active: assessment.isActive
-    };
-
-    if (assessment.id) {
-      const { data, error } = await supabase
-        .from('sumatif_assessments')
-        .update(dbData)
-        .eq('id', assessment.id)
-        .select()
-        .single();
-      if (error) throw error;
-      return { ...data, classId: data.class_id, subjectId: data.subject_id, learningObjectives: data.learning_objectives, questionCount: Number(data.question_count), isActive: data.is_active };
-    } else {
-      const { data, error } = await supabase
-        .from('sumatif_assessments')
-        .insert([dbData])
-        .select()
-        .single();
-      if (error) throw error;
-      return { ...data, classId: data.class_id, subjectId: data.subject_id, learningObjectives: data.learning_objectives, questionCount: Number(data.question_count), isActive: data.is_active };
-    }
-  },
-
-  deleteSumatifAssessment: async (id: string): Promise<void> => {
-    await supabase.from('sumatif_assessments').delete().eq('id', id);
-  },
-
-  // --- Questions ---
-  getQuestions: async (assessmentId: string): Promise<Question[]> => {
-    const { data, error } = await supabase
-      .from('questions')
-      .select('*')
-      .eq('assessment_id', assessmentId)
-      .order('order', { ascending: true });
-    
-    if (error) return [];
-    return data.map((q: any) => ({
-      ...q,
-      assessmentId: q.assessment_id,
-      correctAnswer: q.correct_answer,
-      points: Number(q.points),
-      order: Number(q.order)
-    }));
-  },
-
-  saveQuestion: async (question: Partial<Question>): Promise<Question> => {
-    const dbData = {
-      assessment_id: question.assessmentId,
-      type: question.type,
-      text: question.text,
-      options: question.options,
-      correct_answer: question.correctAnswer,
-      points: question.points,
-      order: question.order
-    };
-
-    if (question.id) {
-      const { data, error } = await supabase
-        .from('questions')
-        .update(dbData)
-        .eq('id', question.id)
-        .select()
-        .single();
-      if (error) throw error;
-      return { ...data, assessmentId: data.assessment_id, correctAnswer: data.correct_answer, points: Number(data.points), order: Number(data.order) };
-    } else {
-      const { data, error } = await supabase
-        .from('questions')
-        .insert([dbData])
-        .select()
-        .single();
-      if (error) throw error;
-      return { ...data, assessmentId: data.assessment_id, correctAnswer: data.correct_answer, points: Number(data.points), order: Number(data.order) };
-    }
-  },
-
-  deleteQuestion: async (id: string): Promise<void> => {
-    await supabase.from('questions').delete().eq('id', id);
-  },
-
-  // --- Exam Results ---
-  getExamResults: async (assessmentId: string): Promise<StudentExamResult[]> => {
-    const { data, error } = await supabase
-      .from('exam_results')
-      .select(`
-        *,
-        users (
-          full_name,
-          username
-        )
-      `)
-      .eq('assessment_id', assessmentId);
-    
-    if (error) return [];
-    return data.map((r: any) => ({
-      ...r,
-      assessmentId: r.assessment_id,
-      studentId: r.student_id,
-      studentName: r.users?.full_name || r.users?.username || r.student_name || 'Siswa',
-      score: Number(r.score),
-      totalPoints: Number(r.total_points),
-      completedAt: r.completed_at
-    }));
-  },
-
-  getStudentExamResults: async (studentId: string): Promise<StudentExamResult[]> => {
-    const { data, error } = await supabase
-      .from('exam_results')
-      .select(`
-        *,
-        users (
-          full_name,
-          username
-        )
-      `)
-      .eq('student_id', studentId);
-    
-    if (error) return [];
-    return data.map((r: any) => ({
-      ...r,
-      assessmentId: r.assessment_id,
-      studentId: r.student_id,
-      studentName: r.users?.full_name || r.users?.username || r.student_name || 'Siswa',
-      score: Number(r.score),
-      totalPoints: Number(r.total_points),
-      completedAt: r.completed_at
-    }));
-  },
-
-  saveExamResult: async (result: Omit<StudentExamResult, 'id' | 'completedAt'>): Promise<void> => {
-    const dbData = {
-      assessment_id: result.assessmentId,
-      student_id: result.studentId,
-      student_name: result.studentName,
-      score: result.score,
-      total_points: result.totalPoints,
-      answers: result.answers
-    };
-    await supabase.from('exam_results').insert([dbData]);
   },
 };
