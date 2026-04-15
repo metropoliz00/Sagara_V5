@@ -52,12 +52,20 @@ export const apiService = {
       .single();
     
     if (error || !data) return null;
+
+    let nisn = undefined;
+    if (data.role === 'siswa' && data.student_id) {
+      const { data: studentData } = await supabase.from('students').select('nisn').eq('id', data.student_id).single();
+      if (studentData) nisn = studentData.nisn;
+    }
+
     return {
       ...data,
       fullName: data.full_name,
       birthInfo: data.birth_info,
       classId: data.class_id,
-      studentId: data.student_id
+      studentId: data.student_id,
+      nisn
     } as User;
   },
 
@@ -69,12 +77,20 @@ export const apiService = {
       .single();
     
     if (error || !data) return null;
+
+    let nisn = undefined;
+    if (data.role === 'siswa' && data.student_id) {
+      const { data: studentData } = await supabase.from('students').select('nisn').eq('id', data.student_id).single();
+      if (studentData) nisn = studentData.nisn;
+    }
+
     return {
       ...data,
       fullName: data.full_name,
       birthInfo: data.birth_info,
       classId: data.class_id,
-      studentId: data.student_id
+      studentId: data.student_id,
+      nisn
     } as User;
   },
 
@@ -1459,7 +1475,13 @@ export const apiService = {
   getExamResults: async (assessmentId: string): Promise<StudentExamResult[]> => {
     const { data, error } = await supabase
       .from('exam_results')
-      .select('*')
+      .select(`
+        *,
+        users (
+          full_name,
+          username
+        )
+      `)
       .eq('assessment_id', assessmentId);
     
     if (error) return [];
@@ -1467,7 +1489,7 @@ export const apiService = {
       ...r,
       assessmentId: r.assessment_id,
       studentId: r.student_id,
-      studentName: r.student_name,
+      studentName: r.users?.full_name || r.users?.username || r.student_name || 'Siswa',
       score: Number(r.score),
       totalPoints: Number(r.total_points),
       completedAt: r.completed_at
@@ -1477,7 +1499,13 @@ export const apiService = {
   getStudentExamResults: async (studentId: string): Promise<StudentExamResult[]> => {
     const { data, error } = await supabase
       .from('exam_results')
-      .select('*')
+      .select(`
+        *,
+        users (
+          full_name,
+          username
+        )
+      `)
       .eq('student_id', studentId);
     
     if (error) return [];
@@ -1485,7 +1513,7 @@ export const apiService = {
       ...r,
       assessmentId: r.assessment_id,
       studentId: r.student_id,
-      studentName: r.student_name,
+      studentName: r.users?.full_name || r.users?.username || r.student_name || 'Siswa',
       score: Number(r.score),
       totalPoints: Number(r.total_points),
       completedAt: r.completed_at

@@ -159,7 +159,7 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
       const finalResult: Omit<StudentExamResult, 'id' | 'completedAt'> = {
         assessmentId: selectedAssessment.id,
         studentId: currentUser.id,
-        studentName: currentUser.fullName || 'Siswa',
+        studentName: currentUser.fullName || currentUser.username || 'Siswa',
         score,
         totalPoints,
         answers
