@@ -10,6 +10,7 @@ import { MOCK_SUBJECTS } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as XLSX from 'xlsx';
 import { useRef } from 'react';
+import CustomModal from './CustomModal';
 
 const generateToken = () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -39,6 +40,43 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
   const [activeTab, setActiveTab] = useState<'list' | 'edit' | 'questions' | 'results'>('list');
   const [isSyncing, setIsSyncing] = useState(false);
   const excelInputRef = useRef<HTMLInputElement>(null);
+
+  // Modal State
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    type: 'alert' | 'confirm' | 'success' | 'error';
+    title?: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    type: 'alert',
+    message: '',
+    onConfirm: () => {}
+  });
+
+  const showAlert = (message: string, type: 'success' | 'error' | 'alert' = 'alert', title?: string) => {
+    setModalConfig({
+      isOpen: true,
+      type,
+      title,
+      message,
+      onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+    });
+  };
+
+  const showConfirm = (message: string, onConfirm: () => void, title?: string) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'confirm',
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setModalConfig(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
 
   const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -87,20 +125,26 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
           };
         });
 
-        if (window.confirm(`Impor ${newQuestions.length} soal dari Excel?`)) {
+        showConfirm(`Impor ${newQuestions.length} soal dari Excel?`, async () => {
           setLoading(true);
-          for (const q of newQuestions) {
-            await apiService.saveQuestion(q as any);
+          try {
+            for (const q of newQuestions) {
+              await apiService.saveQuestion(q as any);
+            }
+            const updatedQuestions = await apiService.getQuestions(currentAssessment.id!);
+            setQuestions(updatedQuestions);
+            showAlert("Impor berhasil!", "success");
+          } catch (err) {
+            console.error("Error saving imported questions:", err);
+            showAlert("Gagal menyimpan soal hasil impor.", "error");
+          } finally {
+            setLoading(false);
           }
-          const updatedQuestions = await apiService.getQuestions(currentAssessment.id!);
-          setQuestions(updatedQuestions);
-          alert("Impor berhasil!");
-        }
+        });
       } catch (err) {
         console.error("Error importing excel:", err);
-        alert("Gagal mengimpor file. Pastikan format kolom sesuai.");
+        showAlert("Gagal mengimpor file. Pastikan format kolom sesuai.", "error");
       } finally {
-        setLoading(false);
         if (excelInputRef.current) excelInputRef.current.value = '';
       }
     };
@@ -188,29 +232,26 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
     
     const field = fieldMap[title];
     if (!field) {
-      alert("Judul asesmen tidak valid untuk sinkronisasi nilai (Harus SUM 1-4 atau SAS)");
+      showAlert("Judul asesmen tidak valid untuk sinkronisasi nilai (Harus SUM 1-4 atau SAS)", "error");
       return;
     }
 
-    if (!window.confirm(`Sinkronisasi ${examResults.length} nilai ke buku nilai (Kolom ${title})?`)) return;
-
-    setIsSyncing(true);
-    try {
-      for (const result of examResults) {
-        // We need to get the current grade data first to not overwrite other sums
-        // But apiService.saveGrade usually handles merging if implemented correctly
-        // Let's assume we can push individual updates
-        await apiService.saveGrade(result.studentId, currentAssessment.subjectId, {
-          [field]: Math.round(result.score)
-        } as any, activeClassId);
+    showConfirm(`Sinkronisasi ${examResults.length} nilai ke buku nilai (Kolom ${title})?`, async () => {
+      setIsSyncing(true);
+      try {
+        for (const result of examResults) {
+          await apiService.saveGrade(result.studentId, currentAssessment.subjectId!, {
+            [field]: Math.round(result.score)
+          } as any, activeClassId);
+        }
+        showAlert("Sinkronisasi berhasil!", "success");
+      } catch (error) {
+        console.error("Error syncing grades:", error);
+        showAlert("Gagal melakukan sinkronisasi.", "error");
+      } finally {
+        setIsSyncing(false);
       }
-      alert("Sinkronisasi berhasil!");
-    } catch (error) {
-      console.error("Error syncing grades:", error);
-      alert("Gagal melakukan sinkronisasi.");
-    } finally {
-      setIsSyncing(false);
-    }
+    });
   };
 
   useEffect(() => {
@@ -256,13 +297,15 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
   };
 
   const handleDeleteAssessment = async (id: string) => {
-    if (!window.confirm("Hapus asesmen ini beserta semua pertanyaannya?")) return;
-    try {
-      await apiService.deleteSumatifAssessment(id);
-      setAssessments(prev => prev.filter(a => a.id !== id));
-    } catch (error) {
-      console.error("Error deleting assessment:", error);
-    }
+    showConfirm("Hapus asesmen ini beserta semua pertanyaannya?", async () => {
+      try {
+        await apiService.deleteSumatifAssessment(id);
+        setAssessments(prev => prev.filter(a => a.id !== id));
+      } catch (error) {
+        console.error("Error deleting assessment:", error);
+        showAlert("Gagal menghapus asesmen.", "error");
+      }
+    });
   };
 
   const handleEditQuestions = async (assessment: SumatifAssessment) => {
@@ -304,13 +347,15 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
   };
 
   const handleDeleteQuestion = async (id: string) => {
-    if (!window.confirm("Hapus pertanyaan ini?")) return;
-    try {
-      await apiService.deleteQuestion(id);
-      setQuestions(prev => prev.filter(q => q.id !== id));
-    } catch (error) {
-      console.error("Error deleting question:", error);
-    }
+    showConfirm("Hapus pertanyaan ini?", async () => {
+      try {
+        await apiService.deleteQuestion(id);
+        setQuestions(prev => prev.filter(q => q.id !== id));
+      } catch (error) {
+        console.error("Error deleting question:", error);
+        showAlert("Gagal menghapus pertanyaan.", "error");
+      }
+    });
   };
 
   if (loading && activeTab === 'list') {
@@ -1080,6 +1125,15 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
           </div>
         )}
       </AnimatePresence>
+
+      <CustomModal 
+        isOpen={modalConfig.isOpen}
+        type={modalConfig.type}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onConfirm={modalConfig.onConfirm}
+        onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };
