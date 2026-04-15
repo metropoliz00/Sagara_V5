@@ -29,7 +29,7 @@ const SumatifReview: React.FC<SumatifReviewProps> = ({ currentUser, activeClassI
     setLoading(true);
     try {
       const [resultsData, assessmentsData] = await Promise.all([
-        apiService.getStudentExamResults(currentUser.id),
+        apiService.getStudentExamResults(currentUser.studentId || currentUser.id),
         apiService.getSumatifAssessments(activeClassId)
       ]);
       
@@ -70,7 +70,7 @@ const SumatifReview: React.FC<SumatifReviewProps> = ({ currentUser, activeClassI
           <h1 className="text-2xl font-bold text-slate-800 flex items-center">
             <Award className="mr-2 text-blue-500" /> Hasil Sumatif
           </h1>
-          <p className="text-slate-500">Riwayat nilai dan evaluasi ujian Anda</p>
+          <p className="text-slate-500">Riwayat nilai dan evaluasi ujian untuk {currentUser?.fullName || 'Siswa'}</p>
         </div>
         
         <div className="relative w-full md:w-64">
