@@ -540,30 +540,53 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
                 )}
 
                 {currentQuestion?.type === 'benar-salah' && (
-                  <div className="space-y-4">
-                    <label className="text-sm font-bold text-slate-700">Jawaban Benar</label>
-                    <div className="flex space-x-6">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input 
-                          type="radio" 
-                          name="bs" 
-                          checked={currentQuestion.correctAnswer === 'Benar'}
-                          onChange={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: 'Benar' }))}
-                          className="w-5 h-5 text-blue-600"
-                        />
-                        <span className="font-bold text-slate-700">Benar</span>
-                      </label>
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input 
-                          type="radio" 
-                          name="bs" 
-                          checked={currentQuestion.correctAnswer === 'Salah'}
-                          onChange={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: 'Salah' }))}
-                          className="w-5 h-5 text-blue-600"
-                        />
-                        <span className="font-bold text-slate-700">Salah</span>
-                      </label>
+                  <div className="space-y-6">
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start">
+                      <AlertCircle size={18} className="text-blue-500 mr-3 mt-0.5" />
+                      <p className="text-xs text-blue-700 leading-relaxed">
+                        Tipe Benar-Salah sekarang mendukung 3 sub-pernyataan untuk 1 soal utama. 
+                        Masukkan pernyataan di kolom "Pertanyaan" di atas, lalu isi 3 sub-pernyataan di bawah ini.
+                      </p>
                     </div>
+                    
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sub-Pernyataan {i + 1}</span>
+                        </div>
+                        <input 
+                          type="text"
+                          value={currentQuestion.options?.[i] || ''}
+                          onChange={e => {
+                            const newOpts = [...(currentQuestion.options || ['', '', ''])];
+                            newOpts[i] = e.target.value;
+                            setCurrentQuestion(prev => ({ ...prev, options: newOpts }));
+                          }}
+                          placeholder={`Isi sub-pernyataan ${i + 1}...`}
+                          className="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                        <div className="flex space-x-4">
+                          {['Benar', 'Salah'].map(val => (
+                            <label key={val} className="flex items-center space-x-2 cursor-pointer">
+                              <input 
+                                type="radio" 
+                                name={`bs-${i}`} 
+                                checked={(currentQuestion.correctAnswer as Record<string, string>)?.[i] === val}
+                                onChange={() => {
+                                  const current = (currentQuestion.correctAnswer as Record<string, string>) || {};
+                                  setCurrentQuestion(prev => ({ 
+                                    ...prev, 
+                                    correctAnswer: { ...current, [i]: val } 
+                                  }));
+                                }}
+                                className="w-4 h-4 text-blue-600"
+                              />
+                              <span className="text-sm font-medium text-slate-700">{val}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
 

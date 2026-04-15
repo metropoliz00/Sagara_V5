@@ -433,7 +433,7 @@ export interface Question {
   type: 'pilihan-ganda' | 'pilihan-ganda-kompleks' | 'benar-salah';
   text: string;
   options?: string[]; // For multiple choice
-  correctAnswer: string | string[]; // Single string for PG/BS, array for PGK
+  correctAnswer: string | string[] | Record<string, string>; // Single string for PG/BS, array for PGK, object for multiple BS
   points: number;
   order: number;
 }

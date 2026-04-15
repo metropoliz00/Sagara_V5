@@ -91,8 +91,17 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
         totalPoints += q.points;
         const studentAnswer = answers[q.id];
         
-        if (q.type === 'pilihan-ganda' || q.type === 'benar-salah') {
+        if (q.type === 'pilihan-ganda') {
           if (studentAnswer === q.correctAnswer) score += q.points;
+        } else if (q.type === 'benar-salah') {
+          // Multiple sub-questions scoring
+          const correct = q.correctAnswer as Record<string, string>;
+          const student = studentAnswer as Record<string, string>;
+          let allCorrect = true;
+          [0, 1, 2].forEach(i => {
+            if (!student || student[i] !== correct[i]) allCorrect = false;
+          });
+          if (allCorrect) score += q.points;
         } else if (q.type === 'pilihan-ganda-kompleks') {
           const correct = Array.isArray(q.correctAnswer) ? q.correctAnswer : [];
           const student = Array.isArray(studentAnswer) ? studentAnswer : [];
@@ -363,18 +372,31 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
                   ))}
 
                   {questions[currentQuestionIdx].type === 'benar-salah' && (
-                    <div className="flex flex-col space-y-3">
-                      {['Benar', 'Salah'].map(opt => (
-                        <button 
-                          key={opt}
-                          onClick={() => handleAnswer(questions[currentQuestionIdx].id, opt)}
-                          className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center ${answers[questions[currentQuestionIdx].id] === opt ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-100 hover:border-slate-200 text-slate-600'}`}
-                        >
-                          <div className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${answers[questions[currentQuestionIdx].id] === opt ? 'bg-blue-500 border-blue-500' : 'border-slate-300'}`}>
-                            {answers[questions[currentQuestionIdx].id] === opt && <div className="w-2 h-2 bg-white rounded-full"/>}
+                    <div className="space-y-4">
+                      {[0, 1, 2].map(i => (
+                        <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                          <p className="text-sm font-bold text-slate-700 mb-3">
+                            {i + 1}. {questions[currentQuestionIdx].options?.[i] || `Pernyataan ${i + 1}`}
+                          </p>
+                          <div className="flex space-x-3">
+                            {['Benar', 'Salah'].map(opt => (
+                              <button 
+                                key={opt}
+                                onClick={() => {
+                                  const current = (answers[questions[currentQuestionIdx].id] as Record<string, string>) || {};
+                                  handleAnswer(questions[currentQuestionIdx].id, { ...current, [i]: opt });
+                                }}
+                                className={`flex-1 p-3 rounded-xl border-2 text-sm font-bold transition-all flex items-center justify-center ${
+                                  (answers[questions[currentQuestionIdx].id] as Record<string, string>)?.[i] === opt 
+                                    ? 'bg-blue-50 border-blue-500 text-blue-700' 
+                                    : 'bg-white border-slate-100 text-slate-500 hover:border-slate-200'
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            ))}
                           </div>
-                          {opt}
-                        </button>
+                        </div>
                       ))}
                     </div>
                   )}
