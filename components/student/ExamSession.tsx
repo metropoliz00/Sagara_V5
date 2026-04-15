@@ -364,7 +364,7 @@ const ExamSession: React.FC = () => {
           </div>
 
           <button 
-            onClick={() => window.close()}
+            onClick={() => navigate('/')}
             className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-2xl transition-all"
           >
             Tutup Jendela
