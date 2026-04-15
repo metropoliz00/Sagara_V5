@@ -9,8 +9,14 @@ import { SumatifAssessment, Question, User, StudentExamResult } from '../../type
 import { apiService } from '../../services/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ExamSession: React.FC = () => {
-  const { assessmentId } = useParams<{ assessmentId: string }>();
+interface ExamSessionProps {
+  assessmentId?: string;
+  onClose?: () => void;
+}
+
+const ExamSession: React.FC<ExamSessionProps> = ({ assessmentId: propAssessmentId, onClose }) => {
+  const { assessmentId: paramAssessmentId } = useParams<{ assessmentId: string }>();
+  const assessmentId = propAssessmentId || paramAssessmentId;
   const navigate = useNavigate();
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -364,7 +370,7 @@ const ExamSession: React.FC = () => {
           </div>
 
           <button 
-            onClick={() => navigate('/')}
+            onClick={() => onClose ? onClose() : navigate('/')}
             className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-2xl transition-all"
           >
             Tutup Jendela

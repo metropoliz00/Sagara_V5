@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   ClipboardList, ChevronRight, Loader2, Timer, BookOpen, HelpCircle
 } from 'lucide-react';
@@ -10,12 +9,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface SumatifExamProps {
   currentUser: User | null;
   activeClassId: string;
+  onOpenExam: (assessmentId: string) => void;
 }
 
-const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId }) => {
+const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId, onOpenExam }) => {
   const [assessments, setAssessments] = useState<SumatifAssessment[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchAssessments();
@@ -34,7 +33,7 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
   };
 
   const handleOpenExam = (assessmentId: string) => {
-    navigate(`/exam/${assessmentId}`);
+    onOpenExam(assessmentId);
   };
 
   if (loading) {
