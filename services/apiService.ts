@@ -1516,7 +1516,11 @@ export const apiService = {
       `)
       .eq('student_id', studentId);
     
-    if (error) return [];
+    if (error) {
+      console.error("Error fetching exam results:", error);
+      return [];
+    }
+    console.log("Raw exam results data:", data);
     return data.map((r: any) => ({
       ...r,
       assessmentId: r.assessment_id,
