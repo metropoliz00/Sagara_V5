@@ -54,18 +54,14 @@ export const apiService = {
     if (error || !data) return null;
 
     let nisn = undefined;
-    let studentName = undefined;
-    if (data.role?.toLowerCase() === 'siswa' && data.student_id) {
-      const { data: studentData } = await supabase.from('students').select('nisn, name').eq('id', data.student_id).single();
-      if (studentData) {
-        nisn = studentData.nisn;
-        studentName = studentData.name;
-      }
+    if (data.role === 'siswa' && data.student_id) {
+      const { data: studentData } = await supabase.from('students').select('nisn').eq('id', data.student_id).single();
+      if (studentData) nisn = studentData.nisn;
     }
 
     return {
       ...data,
-      fullName: data.full_name || studentName || data.username,
+      fullName: data.full_name,
       birthInfo: data.birth_info,
       classId: data.class_id,
       studentId: data.student_id,
@@ -83,18 +79,14 @@ export const apiService = {
     if (error || !data) return null;
 
     let nisn = undefined;
-    let studentName = undefined;
-    if (data.role?.toLowerCase() === 'siswa' && data.student_id) {
-      const { data: studentData } = await supabase.from('students').select('nisn, name').eq('id', data.student_id).single();
-      if (studentData) {
-        nisn = studentData.nisn;
-        studentName = studentData.name;
-      }
+    if (data.role === 'siswa' && data.student_id) {
+      const { data: studentData } = await supabase.from('students').select('nisn').eq('id', data.student_id).single();
+      if (studentData) nisn = studentData.nisn;
     }
 
     return {
       ...data,
-      fullName: data.full_name || studentName || data.username,
+      fullName: data.full_name,
       birthInfo: data.birth_info,
       classId: data.class_id,
       studentId: data.student_id,
@@ -1516,11 +1508,7 @@ export const apiService = {
       `)
       .eq('student_id', studentId);
     
-    if (error) {
-      console.error("Error fetching exam results:", error);
-      return [];
-    }
-    console.log("Raw exam results data:", data);
+    if (error) return [];
     return data.map((r: any) => ({
       ...r,
       assessmentId: r.assessment_id,
@@ -1539,13 +1527,8 @@ export const apiService = {
       student_name: result.studentName,
       score: result.score,
       total_points: result.totalPoints,
-      answers: result.answers,
-      completed_at: new Date().toISOString()
+      answers: result.answers
     };
-    const { error } = await supabase.from('exam_results').insert([dbData]);
-    if (error) {
-      console.error("Error saving exam result:", error);
-      throw error;
-    }
+    await supabase.from('exam_results').insert([dbData]);
   },
 };

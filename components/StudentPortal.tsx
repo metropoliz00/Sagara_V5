@@ -3,7 +3,7 @@ import { Student, GradeRecord, LiaisonLog, AgendaItem, Material, BehaviorLog, Pe
 import { MOCK_SUBJECTS, CALENDAR_CODES, PREFILLED_CALENDAR_2025, HOLIDAY_DESCRIPTIONS_2025_2026 } from '../constants';
 import { 
   User, Calendar, Send, FileText, CheckCircle, XCircle, 
-  BookOpen, LayoutDashboard, Clock, Monitor,
+  BookOpen, LayoutDashboard, Clock,
   Star, HeartHandshake, ListTodo,
   MapPin, CheckSquare, X, Medal, Heart, MessageCircle, Trophy,
   Edit, Save, Loader2, PlusCircle, History, MessageSquare,
@@ -15,7 +15,6 @@ import { apiService } from '../services/apiService';
 import { useModal } from '../context/ModalContext';
 import SumatifExam from './student/SumatifExam';
 import SumatifReview from './student/SumatifReview';
-import ExamSession from './student/ExamSession';
 
 interface StudentPortalProps {
   student: Student;
@@ -35,14 +34,13 @@ interface StudentPortalProps {
   materials?: Material[];
 }
 
-type PortalTab = 'dashboard' | 'attendance' | 'liaison' | 'profile' | 'character' | 'materi' | 'sumatif-exam' | 'sumatif-review' | 'exam-session';
+type PortalTab = 'dashboard' | 'attendance' | 'liaison' | 'profile' | 'character' | 'materi' | 'sumatif-exam' | 'sumatif-review';
 
 const StudentPortal: React.FC<StudentPortalProps> = ({
   student, allAttendance, grades, liaisonLogs, agendas, behaviorLogs, permissionRequests, karakterAssessments,
   onSaveLiaison, onSavePermission, onSaveKarakter, onUpdateStudent, learningDocumentation = [], bookLoans = [], materials = []
 }) => {
   const [activeTab, setActiveTab] = useState<PortalTab>('dashboard');
-  const [activeAssessmentId, setActiveAssessmentId] = useState<string | null>(null);
   const { showAlert } = useModal();
   
   // -- STATES FOR DASHBOARD GRADES --
@@ -527,7 +525,6 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
     { id: 'materi', label: 'Materi', icon: BookOpen },
     { id: 'sumatif-exam', label: 'Ujian Sumatif', icon: ClipboardList },
     { id: 'sumatif-review', label: 'Hasil Sumatif', icon: Award },
-    { id: 'exam-session', label: 'Sesi Ujian', icon: Monitor },
     { id: 'liaison', label: 'Buku Penghubung', icon: MessageSquare },
     { id: 'profile', label: 'Profil Siswa', icon: User },
     { id: 'character', label: 'Karakter', icon: HeartHandshake },
@@ -1275,21 +1272,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({
           )}
 
           {activeTab === 'sumatif-exam' && (
-              <SumatifExam 
-                currentUser={student as any} 
-                activeClassId={student.classId} 
-                onOpenExam={(id) => {
-                    setActiveAssessmentId(id);
-                    setActiveTab('exam-session');
-                }}
-              />
-          )}
-
-          {activeTab === 'exam-session' && activeAssessmentId && (
-              <ExamSession 
-                assessmentId={activeAssessmentId} 
-                onClose={() => setActiveTab('sumatif-exam')}
-              />
+              <SumatifExam currentUser={student as any} activeClassId={student.classId} />
           )}
 
           {activeTab === 'sumatif-review' && (

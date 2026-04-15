@@ -30,7 +30,6 @@ interface SumatifAdminProps {
 
 const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId }) => {
   const [assessments, setAssessments] = useState<SumatifAssessment[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState<Partial<SumatifAssessment> | null>(null);
@@ -257,17 +256,7 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
 
   useEffect(() => {
     fetchAssessments();
-    fetchStudents();
   }, [activeClassId]);
-
-  const fetchStudents = async () => {
-    try {
-      const data = await apiService.getStudents(currentUser);
-      setStudents(data);
-    } catch (error) {
-      console.error("Error fetching students:", error);
-    }
-  };
 
   const fetchAssessments = async () => {
     setLoading(true);
@@ -791,12 +780,9 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
                     </tr>
                   </thead>
                   <tbody>
-                    {examResults.map((result, rIdx) => {
-                      const student = students.find(s => s.id === result.studentId);
-                      const displayName = student?.name || result.studentName;
-                      return (
+                    {examResults.map((result, rIdx) => (
                       <tr key={result.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                        <td className="p-4 text-sm font-bold text-slate-700 sticky left-0 bg-white z-10">{displayName}</td>
+                        <td className="p-4 text-sm font-bold text-slate-700 sticky left-0 bg-white z-10">{result.studentName}</td>
                         <td className="p-4 text-sm font-bold text-blue-600 text-center">{Math.round(result.score)}</td>
                         {questions.map((q) => {
                           const studentAnswer = result.answers[q.id];
@@ -817,7 +803,7 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
                           );
                         })}
                       </tr>
-                    )})}
+                    ))}
                   </tbody>
                   <tfoot className="bg-slate-50 font-bold">
                     <tr>
