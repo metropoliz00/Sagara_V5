@@ -33,7 +33,10 @@ const SumatifReview: React.FC<SumatifReviewProps> = ({ currentUser, activeClassI
         apiService.getSumatifAssessments(activeClassId)
       ]);
       
-      setResults(resultsData.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()));
+      console.log("Fetched resultsData:", resultsData);
+      console.log("Fetched assessmentsData:", assessmentsData);
+      
+      setResults(resultsData.sort((a, b) => new Date(b.completedAt || 0).getTime() - new Date(a.completedAt || 0).getTime()));
       
       const assessmentMap: Record<string, SumatifAssessment> = {};
       assessmentsData.forEach(a => {
