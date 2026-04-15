@@ -274,6 +274,11 @@ export interface SchoolProfileData {
   runningText?: string;
   runningTextSpeed?: number;
   headmasterSignature?: string;
+  appName?: string;
+  appTagline?: string;
+  appLogo?: string;
+  loadingLogo?: string;
+  footerText?: string;
   developerInfo?: {
     name: string;
     moto: string;

@@ -7,7 +7,7 @@ import {
   Star, FolderOpen, BookOpenCheck, UsersRound, Briefcase, Settings, Award, ListTodo,
   ClipboardList
 } from 'lucide-react';
-import { ViewState, User } from '../types';
+import { User, SchoolProfileData, ViewState } from '../types';
 
 interface SidebarProps {
   currentUser: User | null;
@@ -15,6 +15,7 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onLogout: () => void;
+  schoolProfile?: SchoolProfileData;
 }
 
 // 1. Dashboard dipisahkan sebagai item mandiri
@@ -88,7 +89,7 @@ const menuGroups = [
   }
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onClose, onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onClose, onLogout, schoolProfile }) => {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -179,18 +180,20 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUser, currentView, isOpen, onC
             <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
               <div className="w-12 h-12 flex items-center justify-center shrink-0">
                 <img 
-                  src="https://png.pngtree.com/png-clipart/20230928/original/pngtree-education-school-logo-design-kids-student-learning-vector-png-image_12898111.png" 
-                  alt="Logo SAGARA" 
+                  src={schoolProfile?.appLogo || "https://png.pngtree.com/png-clipart/20230928/original/pngtree-education-school-logo-design-kids-student-learning-vector-png-image_12898111.png"} 
+                  alt={`Logo ${schoolProfile?.appName || "SAGARA"}`} 
                   className="w-full h-full object-contain animate-float"
                 />
               </div>
               {!isCollapsed && (
                 <div className="flex flex-col overflow-hidden">
                   <h1 className="text-xl font-extrabold tracking-tight text-slate-800 flex items-center">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5AB2FF] to-[#A0DEFF]">SAGARA</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5AB2FF] to-[#A0DEFF]">
+                      {schoolProfile?.appName || "SAGARA"}
+                    </span>
                   </h1>
                   <span className="text-xs font-medium text-slate-400 mt-0.5 truncate">
-                      UPT SD Negeri Remen 2
+                      {schoolProfile?.name || "UPT SD Negeri Remen 2"}
                   </span>
                 </div>
               )}

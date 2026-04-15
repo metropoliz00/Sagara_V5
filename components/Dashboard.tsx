@@ -388,7 +388,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               {getGreetingIcon(getGreeting())}
               <span>Selamat {getGreeting()}, <span className="text-[#5AB2FF]">{(teacherName && teacherName !== 'undefined') ? teacherName : 'Bapak/Ibu Guru'}</span> 👋</span>
             </h1>
-            <p className="text-gray-500 text-sm mt-1">Selamat datang di Aplikasi SAGARA | Sistem Akademik & Administrasi Terintegrasi. Berikut adalah ringkasan aktivitas {teachingClass ? `Kelas ${teachingClass}` : 'Sekolah'} hari ini.</p>
+            <p className="text-gray-500 text-sm mt-1">Selamat datang di Aplikasi {schoolProfile?.appName || "SAGARA"} | Sistem Akademik & Administrasi Terintegrasi. Berikut adalah ringkasan aktivitas {teachingClass ? `Kelas ${teachingClass}` : 'Sekolah'} hari ini.</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
             <button 

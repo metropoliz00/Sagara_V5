@@ -3,10 +3,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/apiService';
 import { User, Lock, Loader2, ArrowRight, Sparkles, Eye, EyeOff, Code, X } from 'lucide-react';
-import { User as UserType, SchoolProfileData } from '../types';
+import { User as UserType, SchoolProfileData, ViewState } from '../types';
 
 interface LoginProps {
   onLoginSuccess: (user: UserType) => void;
+  schoolProfile?: SchoolProfileData;
 }
 
 // Placeholder - User must replace this in Google Cloud Console
@@ -14,7 +15,7 @@ interface LoginProps {
 // Cast to string to prevent TypeScript from inferring a literal type, which causes TS2367 in comparisons
 const GOOGLE_CLIENT_ID = "188596791323-rf3gor7ompi1hn7086vp38rkths652te.apps.googleusercontent.com" as string; 
 
-const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+const Login: React.FC<LoginProps> = ({ onLoginSuccess, schoolProfile }) => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -208,15 +209,15 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 <div className="flex items-center justify-center gap-4 mb-4">
                     <div className="relative w-20 h-20 flex items-center justify-center">
                          <img 
-                           src="https://image2url.com/r2/default/images/1770790148258-99f209ea-fd45-44cf-9576-9c5205ef8b20.png" 
-                           alt="Logo SAGARA" 
+                           src={schoolProfile?.appLogo || "https://image2url.com/r2/default/images/1770790148258-99f209ea-fd45-44cf-9576-9c5205ef8b20.png"} 
+                           alt={`Logo ${schoolProfile?.appName || "SAGARA"}`} 
                            className="w-full h-full object-contain drop-shadow-lg"
                          />
                     </div>
                     <div className="text-left">
                          <h1 className="text-5xl font-extrabold tracking-tight font-sans">
                              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5AB2FF] to-blue-500">
-                               SAGARA
+                               {schoolProfile?.appName || "SAGARA"}
                              </span>
                          </h1>
                          <div className="h-1.5 w-full bg-gradient-to-r from-[#FFF9D0] to-[#CAF4FF] rounded-full mt-1"></div>
@@ -225,10 +226,10 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                
                <div className="text-center">
                   <p className="text-sm text-slate-500 font-medium tracking-wide">
-                    Sistem Akademik & Administrasi Terintegrasi
+                    {schoolProfile?.appTagline || "Sistem Akademik & Administrasi Terintegrasi"}
                   </p>
                   <p className="inline-block bg-[#CAF4FF] text-blue-800 text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full mt-4 border border-blue-200 shadow-sm">
-                    UPT SD NEGERI REMEN 2
+                    {schoolProfile?.name || "UPT SD NEGERI REMEN 2"}
                   </p>
                </div>
             </div>
@@ -326,7 +327,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
                 <div className="mt-8 text-center">
                 <div className="flex items-center justify-center space-x-2 text-xs text-slate-400">
-                    <span>&copy; 2026 | SAGARA Dev. Meyga</span>
+                    <span>{schoolProfile?.footerText || "© 2026 | SAGARA Dev. Meyga"}</span>
                 </div>
                 </div>
             </div>

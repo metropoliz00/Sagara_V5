@@ -1615,12 +1615,12 @@ const AppContent: React.FC = () => {
          <div className="relative w-24 h-24 flex items-center justify-center mb-6 animate-bounce">
             <div className="absolute inset-0 bg-[#A0DEFF]/30 rounded-full blur-2xl opacity-60 animate-pulse"></div>
             <img 
-              src="https://image2url.com/r2/default/images/1770790148258-99f209ea-fd45-44cf-9576-9c5205ef8b20.png" 
-              alt="Logo SAGARA" 
+              src={schoolProfile?.loadingLogo || "https://image2url.com/r2/default/images/1770790148258-99f209ea-fd45-44cf-9576-9c5205ef8b20.png"} 
+              alt={`Logo ${schoolProfile?.appName || "SAGARA"}`} 
               className="w-full h-full object-contain drop-shadow-xl"
             />
          </div>
-         <h2 className="text-xl font-bold text-slate-700 mb-2">Menyiapkan Data Kelas...</h2>
+         <h2 className="text-xl font-bold text-slate-700 mb-2">Menyiapkan Data {schoolProfile?.appName || "SAGARA"}...</h2>
          <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-[#5AB2FF] rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
             <div className="w-2 h-2 bg-[#5AB2FF] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
@@ -1640,6 +1640,7 @@ const AppContent: React.FC = () => {
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
           onLogout={handleLogout}
+          schoolProfile={schoolProfile}
         />
       )}
 
