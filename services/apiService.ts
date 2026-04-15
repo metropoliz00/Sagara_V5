@@ -19,11 +19,27 @@ export const apiService = {
   
   // --- Real-time Subscription ---
   subscribe: (table: string, callback: (payload: any) => void) => {
-    if (!supabase) return null;
+    if (!supabase || !isApiConfigured()) return null;
     return supabase
       .channel(`public:${table}`)
       .on('postgres_changes', { event: '*', schema: 'public', table }, callback)
       .subscribe();
+  },
+
+  checkConnection: async (): Promise<{ ok: boolean; message: string }> => {
+    if (!isApiConfigured()) return { ok: false, message: 'Konfigurasi Supabase (URL/Key) belum diatur di environment.' };
+    if (!supabase) return { ok: false, message: 'Client Supabase gagal diinisialisasi.' };
+    
+    try {
+      const { error } = await supabase.from('users').select('id').limit(1);
+      if (error) {
+        if (error.code === 'PGRST116') return { ok: true, message: 'Terhubung (Tabel kosong)' };
+        return { ok: false, message: `Error Database: ${error.message} (Code: ${error.code})` };
+      }
+      return { ok: true, message: 'Terhubung ke Database' };
+    } catch (e: any) {
+      return { ok: false, message: `Koneksi Gagal: ${e.message}` };
+    }
   },
 
   // --- Auth & Users ---
@@ -252,8 +268,12 @@ export const apiService = {
 
   // --- Students ---
   getStudents: async (currentUser: User | null): Promise<Student[]> => {
+    if (!supabase || !isApiConfigured()) return [];
     const { data, error } = await supabase.from('students').select('*');
-    if (error) return [];
+    if (error) {
+      console.error("Error fetching students:", error);
+      return [];
+    }
     return data.map((s: any) => ({
       ...s,
       classId: s.class_id,

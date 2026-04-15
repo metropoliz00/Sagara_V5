@@ -172,6 +172,7 @@ const AppContent: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [dbStatus, setDbStatus] = useState<{ ok: boolean; message: string }>({ ok: false, message: 'Mengecek koneksi...' });
 
   // ... (Rest of Modal Helper Functions and Persistence Effects) ...
   const showAlert = (message: string, type: 'success' | 'error' | 'alert' = 'alert', title?: string) => {
@@ -1308,6 +1309,15 @@ const AppContent: React.FC = () => {
 
   // Real-time Database Subscriptions
   useEffect(() => {
+    const checkDb = async () => {
+      const status = await apiService.checkConnection();
+      setDbStatus(status);
+      if (!status.ok && apiService.isConfigured()) {
+        handleShowNotification(status.message, 'error');
+      }
+    };
+    checkDb();
+
     if (!currentUser || !apiService.isConfigured()) return;
 
     const tables = [
@@ -1380,6 +1390,8 @@ const AppContent: React.FC = () => {
         apiService.getSupportDocuments(currentUser),
         apiService.getBookLoans(currentUser),
         apiService.getClassConfig(classIdToFetch),
+        apiService.getSumatifAssessments(classIdToFetch),
+        apiService.getExamResults('ALL'), // Fetch all results for admin/teacher
       ];
 
       // Add inventory fetch if admin/supervisor
@@ -1414,7 +1426,9 @@ const AppContent: React.FC = () => {
       const [
           fUsers, fStudents, fAgendas, fMaterials, fGrades, fCounseling, fExtracurriculars, 
           fProfiles, fHolidays, fAttendance, fSikap, fKarakter, fLinks, fReports, 
-          fLearningDocs, fLiaison, fPermissions, fSupportDocs, fBookLoans, fClassConfig, fInventory, fSchoolAssets, fBOS,
+          fLearningDocs, fLiaison, fPermissions, fSupportDocs, fBookLoans, fClassConfig,
+          fSumatif, fExamResults,
+          fInventory, fSchoolAssets, fBOS,
           _delay // Placeholder for minDelay
       ] = results;
       
@@ -1435,6 +1449,8 @@ const AppContent: React.FC = () => {
       if (fLiaison !== null) setLiaisonLogs(Array.isArray(fLiaison) ? fLiaison as LiaisonLog[] : []);
       if (fSupportDocs !== null) setSupportDocuments(Array.isArray(fSupportDocs) ? fSupportDocs as SupportDocument[] : []);
       if (fBookLoans !== null) setBookLoans(Array.isArray(fBookLoans) ? fBookLoans as BookLoan[] : []);
+      if (fSumatif !== null) setSumatifAssessments(Array.isArray(fSumatif) ? fSumatif as SumatifAssessment[] : []);
+      if (fExamResults !== null) setExamResults(Array.isArray(fExamResults) ? fExamResults as StudentExamResult[] : []);
       
       // Set global inventory state
       if (fInventory !== null && Array.isArray(fInventory)) {
@@ -1827,6 +1843,7 @@ const AppContent: React.FC = () => {
                         subjects={MOCK_SUBJECTS}
                         kktpMap={kktpMap}
                         materials={materials}
+                        dbStatus={dbStatus}
                     />
                 } />
                 <Route path="/dashboard" element={<Navigate to="/" replace />} />
