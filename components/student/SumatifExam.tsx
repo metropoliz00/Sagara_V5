@@ -358,6 +358,19 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
 
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 min-h-[400px] flex flex-col">
               <div className="flex-1">
+                {questions[currentQuestionIdx].imageUrl && (
+                  <div className="mb-6 space-y-2">
+                    <img 
+                      src={questions[currentQuestionIdx].imageUrl} 
+                      alt="Question" 
+                      className="max-h-72 rounded-2xl border border-slate-100 object-contain bg-slate-50 w-full"
+                      referrerPolicy="no-referrer"
+                    />
+                    {questions[currentQuestionIdx].imageCaption && (
+                      <p className="text-xs text-slate-500 italic px-2">{questions[currentQuestionIdx].imageCaption}</p>
+                    )}
+                  </div>
+                )}
                 <p className="text-xl text-slate-800 font-medium leading-relaxed mb-8">
                   {questions[currentQuestionIdx].text}
                 </p>
@@ -368,12 +381,24 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
                     <button 
                       key={i}
                       onClick={() => handleAnswer(questions[currentQuestionIdx].id, opt)}
-                      className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center ${answers[questions[currentQuestionIdx].id] === opt ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-100 hover:border-slate-200 text-slate-600'}`}
+                      className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex flex-col gap-3 ${answers[questions[currentQuestionIdx].id] === opt ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-100 hover:border-slate-200 text-slate-600'}`}
                     >
-                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center mr-4 font-bold ${answers[questions[currentQuestionIdx].id] === opt ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                        {String.fromCharCode(65 + i)}
-                      </span>
-                      {opt}
+                      <div className="flex items-center w-full">
+                        <span className={`w-8 h-8 rounded-lg flex items-center justify-center mr-4 font-bold ${answers[questions[currentQuestionIdx].id] === opt ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                          {String.fromCharCode(65 + i)}
+                        </span>
+                        <span className="flex-1">{opt}</span>
+                      </div>
+                      {questions[currentQuestionIdx].optionImages?.[i] && (
+                        <div className="pl-12 w-full">
+                          <img 
+                            src={questions[currentQuestionIdx].optionImages![i]} 
+                            alt={`Option ${i}`} 
+                            className="max-h-32 rounded-xl border border-slate-100 object-contain bg-white"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      )}
                     </button>
                   ))}
 

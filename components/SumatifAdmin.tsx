@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { 
   ClipboardList, Plus, Edit2, Trash2, CheckCircle, XCircle, 
   ChevronRight, ChevronDown, Save, Loader2, AlertCircle,
-  Key, BookOpen, Target, Settings, HelpCircle, Eye
+  Key, BookOpen, Target, Settings, HelpCircle, Eye, Upload, Image as ImageIcon, FileSpreadsheet
 } from 'lucide-react';
 import { SumatifAssessment, Question, User, StudentExamResult } from '../types';
 import { apiService } from '../services/apiService';
 import { MOCK_SUBJECTS } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
+import * as XLSX from 'xlsx';
+import { useRef } from 'react';
 
 const generateToken = () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -36,6 +38,74 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
   const [currentQuestion, setCurrentQuestion] = useState<Partial<Question> | null>(null);
   const [activeTab, setActiveTab] = useState<'list' | 'edit' | 'questions' | 'results'>('list');
   const [isSyncing, setIsSyncing] = useState(false);
+  const excelInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentAssessment?.id) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+        const newQuestions: Omit<Question, 'id'>[] = data.map((row, idx) => {
+          const type = row.Tipe || 'pilihan-ganda';
+          let options: string[] = [];
+          let correctAnswer: any = row.JawabanBenar;
+
+          if (type === 'pilihan-ganda' || type === 'pilihan-ganda-kompleks') {
+            options = [row.OpsiA, row.OpsiB, row.OpsiC, row.OpsiD].filter(Boolean);
+            if (type === 'pilihan-ganda-kompleks') {
+              correctAnswer = String(row.JawabanBenar).split(',').map(s => s.trim());
+            }
+          } else if (type === 'benar-salah') {
+            options = [row.Pernyataan1, row.Pernyataan2, row.Pernyataan3].filter(Boolean);
+            const bsAnswers = String(row.JawabanBenar).split(',').map(s => s.trim());
+            correctAnswer = {
+              0: bsAnswers[0] || 'Benar',
+              1: bsAnswers[1] || 'Benar',
+              2: bsAnswers[2] || 'Benar'
+            };
+          }
+
+          return {
+            assessmentId: currentAssessment.id!,
+            type,
+            text: row.Pertanyaan || 'Pertanyaan Baru',
+            imageUrl: row.LinkGambar || '',
+            imageCaption: row.CaptionGambar || '',
+            options,
+            optionImages: [row.LinkGambarA, row.LinkGambarB, row.LinkGambarC, row.LinkGambarD].filter(Boolean),
+            correctAnswer,
+            points: parseInt(row.Poin) || 1,
+            order: questions.length + idx + 1
+          };
+        });
+
+        if (window.confirm(`Impor ${newQuestions.length} soal dari Excel?`)) {
+          setLoading(true);
+          for (const q of newQuestions) {
+            await apiService.saveQuestion(q as any);
+          }
+          const updatedQuestions = await apiService.getQuestions(currentAssessment.id!);
+          setQuestions(updatedQuestions);
+          alert("Impor berhasil!");
+        }
+      } catch (err) {
+        console.error("Error importing excel:", err);
+        alert("Gagal mengimpor file. Pastikan format kolom sesuai.");
+      } finally {
+        setLoading(false);
+        if (excelInputRef.current) excelInputRef.current.value = '';
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
 
   const handleSyncToGrades = async () => {
     if (!currentAssessment?.id || !currentAssessment?.subjectId || examResults.length === 0) return;
@@ -419,15 +489,38 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
                 <h2 className="text-xl font-bold text-blue-800">{currentAssessment?.title}</h2>
                 <p className="text-blue-600 text-sm">Kelola bank soal untuk asesmen ini</p>
               </div>
-              <button 
-                onClick={() => {
-                  setCurrentQuestion({ type: 'pilihan-ganda', points: 1, options: ['', '', '', ''], correctAnswer: '' });
-                  setIsEditingQuestion(true);
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-bold shadow-lg flex items-center"
-              >
-                <Plus size={20} className="mr-2" /> Tambah Pertanyaan
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <input 
+                  type="file" 
+                  ref={excelInputRef} 
+                  onChange={handleImportExcel} 
+                  accept=".xlsx, .xls" 
+                  className="hidden" 
+                />
+                <button 
+                  onClick={() => excelInputRef.current?.click()}
+                  className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-6 py-3 rounded-2xl font-bold border border-emerald-200 flex items-center transition-all"
+                >
+                  <FileSpreadsheet size={20} className="mr-2" /> Impor Excel
+                </button>
+                <button 
+                  onClick={() => {
+                    setCurrentQuestion({ 
+                      type: 'pilihan-ganda', 
+                      points: 1, 
+                      options: ['', '', '', ''], 
+                      optionImages: ['', '', '', ''],
+                      correctAnswer: '',
+                      imageUrl: '',
+                      imageCaption: ''
+                    });
+                    setIsEditingQuestion(true);
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-bold shadow-lg flex items-center transition-all"
+                >
+                  <Plus size={20} className="mr-2" /> Tambah Pertanyaan
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -454,13 +547,36 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
                         <button onClick={() => handleDeleteQuestion(q.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
                       </div>
                     </div>
+
+                    {q.imageUrl && (
+                      <div className="mb-4 space-y-2">
+                        <img 
+                          src={q.imageUrl} 
+                          alt="Question" 
+                          className="max-h-64 rounded-2xl border border-slate-100 object-contain bg-slate-50"
+                          referrerPolicy="no-referrer"
+                        />
+                        {q.imageCaption && (
+                          <p className="text-xs text-slate-500 italic px-2">{q.imageCaption}</p>
+                        )}
+                      </div>
+                    )}
+
                     <p className="text-slate-800 font-medium mb-4">{q.text}</p>
                     
                     {q.type === 'pilihan-ganda' && q.options && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {q.options.map((opt, i) => (
-                          <div key={i} className={`p-3 rounded-xl border text-sm ${opt === q.correctAnswer ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
-                            {String.fromCharCode(65 + i)}. {opt}
+                          <div key={i} className={`p-3 rounded-xl border text-sm flex flex-col gap-2 ${opt === q.correctAnswer ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
+                            {q.optionImages?.[i] && (
+                              <img 
+                                src={q.optionImages[i]} 
+                                alt={`Option ${i}`} 
+                                className="h-24 rounded-lg object-contain bg-white"
+                                referrerPolicy="no-referrer"
+                              />
+                            )}
+                            <div>{String.fromCharCode(65 + i)}. {opt}</div>
                             {opt === q.correctAnswer && <CheckCircle size={14} className="inline ml-2"/>}
                           </div>
                         ))}
@@ -681,31 +797,74 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
                   />
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 flex items-center">
+                      <ImageIcon size={14} className="mr-1" /> Link Gambar Soal (Opsional)
+                    </label>
+                    <input 
+                      type="text"
+                      value={currentQuestion?.imageUrl || ''}
+                      onChange={e => setCurrentQuestion(prev => ({ ...prev, imageUrl: e.target.value }))}
+                      placeholder="https://example.com/image.jpg"
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">Caption / Keterangan Gambar</label>
+                    <input 
+                      type="text"
+                      value={currentQuestion?.imageCaption || ''}
+                      onChange={e => setCurrentQuestion(prev => ({ ...prev, imageCaption: e.target.value }))}
+                      placeholder="Contoh: Gambar 1.1 Struktur Sel"
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
                 {currentQuestion?.type === 'pilihan-ganda' && (
                   <div className="space-y-4">
                     <label className="text-sm font-bold text-slate-700">Opsi Jawaban (Pilih satu yang benar)</label>
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-1 gap-4">
                       {currentQuestion.options?.map((opt, i) => (
-                        <div key={i} className="flex items-center space-x-3">
-                          <input 
-                            type="radio" 
-                            name="correct" 
-                            checked={opt !== '' && opt === currentQuestion.correctAnswer}
-                            onChange={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: opt }))}
-                            className="w-5 h-5 text-blue-600"
-                            disabled={!opt}
-                          />
-                          <input 
-                            type="text"
-                            value={opt}
-                            onChange={e => {
-                              const newOpts = [...(currentQuestion.options || [])];
-                              newOpts[i] = e.target.value;
-                              setCurrentQuestion(prev => ({ ...prev, options: newOpts }));
-                            }}
-                            placeholder={`Opsi ${String.fromCharCode(65 + i)}`}
-                            className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                          />
+                        <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                          <div className="flex items-center space-x-3">
+                            <input 
+                              type="radio" 
+                              name="correct" 
+                              checked={opt !== '' && opt === currentQuestion.correctAnswer}
+                              onChange={() => setCurrentQuestion(prev => ({ ...prev, correctAnswer: opt }))}
+                              className="w-5 h-5 text-blue-600"
+                              disabled={!opt}
+                            />
+                            <input 
+                              type="text"
+                              value={opt}
+                              onChange={e => {
+                                const newOpts = [...(currentQuestion.options || [])];
+                                newOpts[i] = e.target.value;
+                                setCurrentQuestion(prev => ({ ...prev, options: newOpts }));
+                              }}
+                              placeholder={`Teks Opsi ${String.fromCharCode(65 + i)}`}
+                              className="flex-1 p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div className="pl-8">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase flex items-center mb-1">
+                              <ImageIcon size={10} className="mr-1" /> Link Gambar Opsi (Opsional)
+                            </label>
+                            <input 
+                              type="text"
+                              value={currentQuestion.optionImages?.[i] || ''}
+                              onChange={e => {
+                                const newImgs = [...(currentQuestion.optionImages || ['', '', '', ''])];
+                                newImgs[i] = e.target.value;
+                                setCurrentQuestion(prev => ({ ...prev, optionImages: newImgs }));
+                              }}
+                              placeholder="https://example.com/option-image.jpg"
+                              className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>

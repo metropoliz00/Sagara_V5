@@ -432,7 +432,10 @@ export interface Question {
   assessmentId: string;
   type: 'pilihan-ganda' | 'pilihan-ganda-kompleks' | 'benar-salah';
   text: string;
+  imageUrl?: string;
+  imageCaption?: string;
   options?: string[]; // For multiple choice
+  optionImages?: string[]; // Parallel array to options
   correctAnswer: string | string[] | Record<string, string>; // Single string for PG/BS, array for PGK, object for multiple BS
   points: number;
   order: number;
