@@ -4,10 +4,21 @@ import {
   ChevronRight, ChevronDown, Save, Loader2, AlertCircle,
   Key, BookOpen, Target, Settings, HelpCircle, Eye
 } from 'lucide-react';
-import { SumatifAssessment, Question, User } from '../types';
+import { SumatifAssessment, Question, User, StudentExamResult } from '../types';
 import { apiService } from '../services/apiService';
 import { MOCK_SUBJECTS } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const generateToken = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
+const ASSESSMENT_TITLES = ['SUM 1', 'SUM 2', 'SUM 3', 'SUM 4', 'SAS'];
 
 interface SumatifAdminProps {
   currentUser: User | null;
@@ -20,9 +31,50 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
   const [isEditing, setIsEditing] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState<Partial<SumatifAssessment> | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [examResults, setExamResults] = useState<StudentExamResult[]>([]);
   const [isEditingQuestion, setIsEditingQuestion] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<Partial<Question> | null>(null);
-  const [activeTab, setActiveTab] = useState<'list' | 'edit' | 'questions'>('list');
+  const [activeTab, setActiveTab] = useState<'list' | 'edit' | 'questions' | 'results'>('list');
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncToGrades = async () => {
+    if (!currentAssessment?.id || !currentAssessment?.subjectId || examResults.length === 0) return;
+    
+    const title = currentAssessment.title || '';
+    const fieldMap: Record<string, string> = {
+      'SUM 1': 'sum1',
+      'SUM 2': 'sum2',
+      'SUM 3': 'sum3',
+      'SUM 4': 'sum4',
+      'SAS': 'sas'
+    };
+    
+    const field = fieldMap[title];
+    if (!field) {
+      alert("Judul asesmen tidak valid untuk sinkronisasi nilai (Harus SUM 1-4 atau SAS)");
+      return;
+    }
+
+    if (!window.confirm(`Sinkronisasi ${examResults.length} nilai ke buku nilai (Kolom ${title})?`)) return;
+
+    setIsSyncing(true);
+    try {
+      for (const result of examResults) {
+        // We need to get the current grade data first to not overwrite other sums
+        // But apiService.saveGrade usually handles merging if implemented correctly
+        // Let's assume we can push individual updates
+        await apiService.saveGrade(result.studentId, currentAssessment.subjectId, {
+          [field]: Math.round(result.score)
+        } as any, activeClassId);
+      }
+      alert("Sinkronisasi berhasil!");
+    } catch (error) {
+      console.error("Error syncing grades:", error);
+      alert("Gagal melakukan sinkronisasi.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     fetchAssessments();
@@ -144,7 +196,13 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
         {activeTab === 'list' && (
           <button 
             onClick={() => {
-              setCurrentAssessment({ subjectId: MOCK_SUBJECTS[0].id, isActive: true, questionCount: 10 });
+              setCurrentAssessment({ 
+                subjectId: MOCK_SUBJECTS[0].id, 
+                isActive: true, 
+                questionCount: 20,
+                token: generateToken(),
+                title: ASSESSMENT_TITLES[0]
+              });
               setActiveTab('edit');
             }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center shadow-lg transition-all"
@@ -187,7 +245,30 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
                     <div className={`px-3 py-1 rounded-full text-xs font-bold ${assessment.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
                       {assessment.isActive ? 'Aktif' : 'Nonaktif'}
                     </div>
-                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={async () => {
+                          setLoading(true);
+                          setCurrentAssessment(assessment);
+                          try {
+                            const [qData, rData] = await Promise.all([
+                              apiService.getQuestions(assessment.id),
+                              apiService.getExamResults(assessment.id)
+                            ]);
+                            setQuestions(qData);
+                            setExamResults(rData);
+                            setActiveTab('results');
+                          } catch (e) {
+                            console.error(e);
+                          } finally {
+                            setLoading(false);
+                          }
+                        }} 
+                        className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg"
+                        title="Lihat Hasil & Analisis"
+                      >
+                        <Eye size={16}/>
+                      </button>
                       <button onClick={() => { setCurrentAssessment(assessment); setActiveTab('edit'); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 size={16}/></button>
                       <button onClick={() => handleDeleteAssessment(assessment.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
                     </div>
@@ -243,30 +324,37 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700">Token Akses</label>
-                  <div className="relative">
+                  <div className="relative flex space-x-2">
                     <input 
                       type="text"
                       value={currentAssessment?.token}
                       onChange={e => setCurrentAssessment(prev => ({ ...prev, token: e.target.value.toUpperCase() }))}
                       placeholder="CONTOH: MTK01"
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono font-bold"
+                      className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono font-bold"
                       required
                     />
-                    <Key className="absolute right-3 top-3 text-slate-400" size={20} />
+                    <button 
+                      type="button"
+                      onClick={() => setCurrentAssessment(prev => ({ ...prev, token: generateToken() }))}
+                      className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors"
+                      title="Generate Token Baru"
+                    >
+                      <Key size={20} />
+                    </button>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700">Judul Asesmen</label>
-                <input 
-                  type="text"
+                <select 
                   value={currentAssessment?.title}
                   onChange={e => setCurrentAssessment(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Contoh: Sumatif Akhir Semester Ganjil"
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                   required
-                />
+                >
+                  {ASSESSMENT_TITLES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
               </div>
 
               <div className="space-y-2">
@@ -403,6 +491,130 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
                   </div>
                 ))
               )}
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'results' && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-6"
+          >
+            <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-emerald-800">Rekap & Analisis: {currentAssessment?.title}</h2>
+                <p className="text-emerald-600 text-sm">{examResults.length} Siswa telah mengerjakan</p>
+              </div>
+              <button 
+                onClick={handleSyncToGrades}
+                disabled={isSyncing || examResults.length === 0}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-bold shadow-lg flex items-center disabled:opacity-50"
+              >
+                {isSyncing ? <Loader2 className="animate-spin mr-2" size={20}/> : <Save size={20} className="mr-2" />}
+                Integrasikan ke Buku Nilai
+              </button>
+            </div>
+
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100">
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase sticky left-0 bg-slate-50 z-10">Nama Siswa</th>
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase text-center">Skor</th>
+                      {questions.map((_, i) => (
+                        <th key={i} className="p-4 text-xs font-bold text-slate-500 uppercase text-center border-l border-slate-100">S{i+1}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {examResults.map((result, rIdx) => (
+                      <tr key={result.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                        <td className="p-4 text-sm font-bold text-slate-700 sticky left-0 bg-white z-10">{result.studentName}</td>
+                        <td className="p-4 text-sm font-bold text-blue-600 text-center">{Math.round(result.score)}</td>
+                        {questions.map((q) => {
+                          const studentAnswer = result.answers[q.id];
+                          let isCorrect = false;
+                          
+                          if (q.type === 'pilihan-ganda' || q.type === 'benar-salah') {
+                            isCorrect = studentAnswer === q.correctAnswer;
+                          } else if (q.type === 'pilihan-ganda-kompleks') {
+                            const correct = Array.isArray(q.correctAnswer) ? q.correctAnswer : [];
+                            const student = Array.isArray(studentAnswer) ? studentAnswer : [];
+                            isCorrect = correct.length === student.length && correct.every(val => student.includes(val));
+                          }
+                          
+                          return (
+                            <td key={q.id} className={`p-4 text-center border-l border-slate-50 font-mono font-bold ${isCorrect ? 'text-emerald-600' : 'text-red-400'}`}>
+                              {isCorrect ? '1' : '0'}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-50 font-bold">
+                    <tr>
+                      <td className="p-4 text-xs text-slate-500 uppercase sticky left-0 bg-slate-50 z-10">Persentase Benar</td>
+                      <td className="p-4"></td>
+                      {questions.map((q) => {
+                        const correctCount = examResults.filter(r => {
+                          const studentAnswer = r.answers[q.id];
+                          if (q.type === 'pilihan-ganda' || q.type === 'benar-salah') {
+                            return studentAnswer === q.correctAnswer;
+                          } else if (q.type === 'pilihan-ganda-kompleks') {
+                            const correct = Array.isArray(q.correctAnswer) ? q.correctAnswer : [];
+                            const student = Array.isArray(studentAnswer) ? studentAnswer : [];
+                            return correct.length === student.length && correct.every(val => student.includes(val));
+                          }
+                          return false;
+                        }).length;
+                        const percent = examResults.length > 0 ? Math.round((correctCount / examResults.length) * 100) : 0;
+                        return (
+                          <td key={q.id} className="p-4 text-center border-l border-slate-100 text-blue-600 text-xs">
+                            {percent}%
+                          </td>
+                        );
+                      })}
+                    </tr>
+                    <tr>
+                      <td className="p-4 text-xs text-slate-500 uppercase sticky left-0 bg-slate-50 z-10">Tingkat Kesulitan</td>
+                      <td className="p-4"></td>
+                      {questions.map((q) => {
+                        const correctCount = examResults.filter(r => {
+                          const studentAnswer = r.answers[q.id];
+                          if (q.type === 'pilihan-ganda' || q.type === 'benar-salah') {
+                            return studentAnswer === q.correctAnswer;
+                          } else if (q.type === 'pilihan-ganda-kompleks') {
+                            const correct = Array.isArray(q.correctAnswer) ? q.correctAnswer : [];
+                            const student = Array.isArray(studentAnswer) ? studentAnswer : [];
+                            return correct.length === student.length && correct.every(val => student.includes(val));
+                          }
+                          return false;
+                        }).length;
+                        const percent = examResults.length > 0 ? (correctCount / examResults.length) * 100 : 0;
+                        
+                        let difficulty = 'Sedang';
+                        let color = 'text-amber-600';
+                        if (percent > 70) {
+                          difficulty = 'Mudah';
+                          color = 'text-emerald-600';
+                        } else if (percent < 40) {
+                          difficulty = 'Sulit';
+                          color = 'text-red-600';
+                        }
+                        
+                        return (
+                          <td key={q.id} className={`p-4 text-center border-l border-slate-100 text-[10px] ${color}`}>
+                            {difficulty}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </div>
           </motion.div>
         )}

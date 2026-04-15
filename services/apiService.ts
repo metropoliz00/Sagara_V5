@@ -581,17 +581,27 @@ export const apiService = {
     
     await supabase.from('class_config').upsert({ class_id: historyId, data: currentData }, { onConflict: 'class_id' });
   },
-  saveGrade: async (studentId: string, subjectId: string, gradeData: GradeData, classId: string): Promise<void> => {
-    const { error } = await supabase.from('grades').upsert({
+  saveGrade: async (studentId: string, subjectId: string, gradeData: Partial<GradeData>, classId: string): Promise<void> => {
+    // 1. Get existing grade if any
+    const { data: existing } = await supabase
+      .from('grades')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('subject_id', subjectId)
+      .single();
+
+    const mergedData = {
       student_id: studentId,
       subject_id: subjectId,
       class_id: classId,
-      sum1: gradeData.sum1,
-      sum2: gradeData.sum2,
-      sum3: gradeData.sum3,
-      sum4: gradeData.sum4,
-      sas: gradeData.sas
-    }, { onConflict: 'student_id,subject_id' });
+      sum1: gradeData.sum1 !== undefined ? gradeData.sum1 : (existing?.sum1 ?? null),
+      sum2: gradeData.sum2 !== undefined ? gradeData.sum2 : (existing?.sum2 ?? null),
+      sum3: gradeData.sum3 !== undefined ? gradeData.sum3 : (existing?.sum3 ?? null),
+      sum4: gradeData.sum4 !== undefined ? gradeData.sum4 : (existing?.sum4 ?? null),
+      sas: gradeData.sas !== undefined ? gradeData.sas : (existing?.sas ?? null),
+    };
+
+    const { error } = await supabase.from('grades').upsert(mergedData, { onConflict: 'student_id,subject_id' });
     if (error) console.error('Error saving grade:', error);
   },
 

@@ -34,7 +34,7 @@ import MaterialsView from './components/MaterialsView';
 import SumatifAdmin from './components/SumatifAdmin';
 import CustomModal from './components/CustomModal'; 
 import PaperPlaneIcon from './components/PaperPlaneIcon';
-import { ViewState, Student, AgendaItem, Material, Extracurricular, BehaviorLog, GradeRecord, TeacherProfileData, SchoolProfileData, User, Holiday, SikapAssessment, KarakterAssessment, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, LearningJournalEntry, SupportDocument, InventoryItem, SchoolAsset, BOSTransaction, LearningDocumentation, BookLoan, BookInventory } from './types';
+import { ViewState, Student, AgendaItem, Material, Extracurricular, BehaviorLog, GradeRecord, TeacherProfileData, SchoolProfileData, User, Holiday, SikapAssessment, KarakterAssessment, EmploymentLink, LearningReport, LiaisonLog, PermissionRequest, LearningJournalEntry, SupportDocument, InventoryItem, SchoolAsset, BOSTransaction, LearningDocumentation, BookLoan, BookInventory, SumatifAssessment, StudentExamResult } from './types';
 import { MOCK_SUBJECTS, MOCK_STUDENTS, MOCK_EXTRACURRICULARS } from './constants';
 import { apiService } from './services/apiService';
 import { cacheService } from './src/services/cacheService';
@@ -134,6 +134,8 @@ const AppContent: React.FC = () => {
   const [schoolAssets, setSchoolAssets] = useState<SchoolAsset[]>(() => cacheService.get<SchoolAsset[]>('schoolAssets') || []);
   const [bosTransactions, setBosTransactions] = useState<BOSTransaction[]>(() => cacheService.get<BOSTransaction[]>('bosTransactions') || []);
   const [bookLoans, setBookLoans] = useState<BookLoan[]>(() => cacheService.get<BookLoan[]>('bookLoans') || []);
+  const [sumatifAssessments, setSumatifAssessments] = useState<SumatifAssessment[]>([]);
+  const [examResults, setExamResults] = useState<StudentExamResult[]>([]);
   const [kktpMap, setKktpMap] = useState<Record<string, number>>({});
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error' | 'warning'} | null>(null);
   

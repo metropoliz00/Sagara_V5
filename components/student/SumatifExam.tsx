@@ -121,6 +121,31 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
       };
 
       await apiService.saveExamResult(finalResult);
+
+      // Automatically sync to grades if title matches SUM 1-4 or SAS
+      const title = selectedAssessment.title || '';
+      const fieldMap: Record<string, string> = {
+        'SUM 1': 'sum1',
+        'SUM 2': 'sum2',
+        'SUM 3': 'sum3',
+        'SUM 4': 'sum4',
+        'SAS': 'sas'
+      };
+      const field = fieldMap[title];
+      if (field) {
+        try {
+          // Get the subject ID from the assessment
+          const subjectId = selectedAssessment.subjectId;
+          // Save to grades
+          await apiService.saveGrade(currentUser.id, subjectId, {
+            [field]: Math.round(score)
+          } as any, activeClassId);
+          console.log(`Successfully synced ${title} score to grades.`);
+        } catch (e) {
+          console.warn("Failed to auto-sync score to grades:", e);
+        }
+      }
+
       setResult(finalResult);
       setExamState('finished');
     } catch (error) {
