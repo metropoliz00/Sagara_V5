@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   ClipboardList, Plus, Edit2, Trash2, CheckCircle, XCircle, 
   ChevronRight, ChevronDown, Save, Loader2, AlertCircle,
-  Key, BookOpen, Target, Settings, HelpCircle, Eye, Upload, Image as ImageIcon, FileSpreadsheet
+  Key, BookOpen, Target, Settings, HelpCircle, Eye, Upload, Image as ImageIcon, FileSpreadsheet, Download
 } from 'lucide-react';
 import { SumatifAssessment, Question, User, StudentExamResult } from '../types';
 import { apiService } from '../services/apiService';
@@ -105,6 +105,73 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
       }
     };
     reader.readAsBinaryString(file);
+  };
+
+  const handleDownloadTemplate = () => {
+    const template = [
+      {
+        'Tipe': 'pilihan-ganda',
+        'Pertanyaan': 'Ibu kota Indonesia adalah...',
+        'OpsiA': 'Jakarta',
+        'OpsiB': 'Bandung',
+        'OpsiC': 'Surabaya',
+        'OpsiD': 'Medan',
+        'Pernyataan1': '',
+        'Pernyataan2': '',
+        'Pernyataan3': '',
+        'JawabanBenar': 'Jakarta',
+        'LinkGambar': '',
+        'CaptionGambar': '',
+        'LinkGambarA': '',
+        'LinkGambarB': '',
+        'LinkGambarC': '',
+        'LinkGambarD': '',
+        'Poin': 1
+      },
+      {
+        'Tipe': 'pilihan-ganda-kompleks',
+        'Pertanyaan': 'Pilih kota yang berada di Pulau Jawa:',
+        'OpsiA': 'Jakarta',
+        'OpsiB': 'Bandung',
+        'OpsiC': 'Medan',
+        'OpsiD': 'Makassar',
+        'Pernyataan1': '',
+        'Pernyataan2': '',
+        'Pernyataan3': '',
+        'JawabanBenar': 'Jakarta, Bandung',
+        'LinkGambar': '',
+        'CaptionGambar': '',
+        'LinkGambarA': '',
+        'LinkGambarB': '',
+        'LinkGambarC': '',
+        'LinkGambarD': '',
+        'Poin': 1
+      },
+      {
+        'Tipe': 'benar-salah',
+        'Pertanyaan': 'Tentukan pernyataan berikut benar atau salah:',
+        'OpsiA': '',
+        'OpsiB': '',
+        'OpsiC': '',
+        'OpsiD': '',
+        'Pernyataan1': 'Matahari terbit dari timur',
+        'Pernyataan2': '1 + 1 = 3',
+        'Pernyataan3': 'Indonesia merdeka tahun 1945',
+        'JawabanBenar': 'Benar, Salah, Benar',
+        'LinkGambar': '',
+        'CaptionGambar': '',
+        'LinkGambarA': '',
+        'LinkGambarB': '',
+        'LinkGambarC': '',
+        'LinkGambarD': '',
+        'Poin': 1
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(template);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template Soal");
+    XLSX.writeFile(wb, "Template_Soal_Sumatif.xlsx");
   };
 
   const handleSyncToGrades = async () => {
@@ -498,6 +565,12 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
                   className="hidden" 
                 />
                 <button 
+                  onClick={handleDownloadTemplate}
+                  className="bg-white text-slate-600 hover:bg-slate-50 px-6 py-3 rounded-2xl font-bold border border-slate-200 flex items-center transition-all"
+                >
+                  <Download size={20} className="mr-2" /> Template
+                </button>
+                <button 
                   onClick={() => excelInputRef.current?.click()}
                   className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-6 py-3 rounded-2xl font-bold border border-emerald-200 flex items-center transition-all"
                 >
@@ -586,8 +659,16 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
                     {q.type === 'pilihan-ganda-kompleks' && q.options && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {q.options.map((opt, i) => (
-                          <div key={i} className={`p-3 rounded-xl border text-sm ${Array.isArray(q.correctAnswer) && q.correctAnswer.includes(opt) ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
-                            {opt}
+                          <div key={i} className={`p-3 rounded-xl border text-sm flex flex-col gap-2 ${Array.isArray(q.correctAnswer) && q.correctAnswer.includes(opt) ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
+                            {q.optionImages?.[i] && (
+                              <img 
+                                src={q.optionImages[i]} 
+                                alt={`Option ${i}`} 
+                                className="h-24 rounded-lg object-contain bg-white"
+                                referrerPolicy="no-referrer"
+                              />
+                            )}
+                            <div>{opt}</div>
                             {Array.isArray(q.correctAnswer) && q.correctAnswer.includes(opt) && <CheckCircle size={14} className="inline ml-2"/>}
                           </div>
                         ))}
@@ -874,36 +955,54 @@ const SumatifAdmin: React.FC<SumatifAdminProps> = ({ currentUser, activeClassId 
                 {currentQuestion?.type === 'pilihan-ganda-kompleks' && (
                   <div className="space-y-4">
                     <label className="text-sm font-bold text-slate-700">Opsi Jawaban (Pilih semua yang benar)</label>
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-1 gap-4">
                       {currentQuestion.options?.map((opt, i) => (
-                        <div key={i} className="flex items-center space-x-3">
-                          <input 
-                            type="checkbox" 
-                            checked={Array.isArray(currentQuestion.correctAnswer) && currentQuestion.correctAnswer.includes(opt)}
-                            onChange={e => {
-                              const current = Array.isArray(currentQuestion.correctAnswer) ? [...currentQuestion.correctAnswer] : [];
-                              if (e.target.checked) {
-                                current.push(opt);
-                              } else {
-                                const idx = current.indexOf(opt);
-                                if (idx > -1) current.splice(idx, 1);
-                              }
-                              setCurrentQuestion(prev => ({ ...prev, correctAnswer: current }));
-                            }}
-                            className="w-5 h-5 text-blue-600 rounded"
-                            disabled={!opt}
-                          />
-                          <input 
-                            type="text"
-                            value={opt}
-                            onChange={e => {
-                              const newOpts = [...(currentQuestion.options || [])];
-                              newOpts[i] = e.target.value;
-                              setCurrentQuestion(prev => ({ ...prev, options: newOpts }));
-                            }}
-                            placeholder={`Opsi ${i + 1}`}
-                            className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                          />
+                        <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                          <div className="flex items-center space-x-3">
+                            <input 
+                              type="checkbox" 
+                              checked={Array.isArray(currentQuestion.correctAnswer) && currentQuestion.correctAnswer.includes(opt)}
+                              onChange={e => {
+                                const current = Array.isArray(currentQuestion.correctAnswer) ? [...currentQuestion.correctAnswer] : [];
+                                if (e.target.checked) {
+                                  current.push(opt);
+                                } else {
+                                  const idx = current.indexOf(opt);
+                                  if (idx > -1) current.splice(idx, 1);
+                                }
+                                setCurrentQuestion(prev => ({ ...prev, correctAnswer: current }));
+                              }}
+                              className="w-5 h-5 text-blue-600 rounded"
+                              disabled={!opt}
+                            />
+                            <input 
+                              type="text"
+                              value={opt}
+                              onChange={e => {
+                                const newOpts = [...(currentQuestion.options || [])];
+                                newOpts[i] = e.target.value;
+                                setCurrentQuestion(prev => ({ ...prev, options: newOpts }));
+                              }}
+                              placeholder={`Teks Opsi ${i + 1}`}
+                              className="flex-1 p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div className="pl-8">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase flex items-center mb-1">
+                              <ImageIcon size={10} className="mr-1" /> Link Gambar Opsi (Opsional)
+                            </label>
+                            <input 
+                              type="text"
+                              value={currentQuestion.optionImages?.[i] || ''}
+                              onChange={e => {
+                                const newImgs = [...(currentQuestion.optionImages || ['', '', '', ''])];
+                                newImgs[i] = e.target.value;
+                                setCurrentQuestion(prev => ({ ...prev, optionImages: newImgs }));
+                              }}
+                              placeholder="https://example.com/option-image.jpg"
+                              className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>

@@ -412,12 +412,24 @@ const SumatifExam: React.FC<SumatifExamProps> = ({ currentUser, activeClassId })
                         else current.push(opt);
                         handleAnswer(questions[currentQuestionIdx].id, current);
                       }}
-                      className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center ${Array.isArray(answers[questions[currentQuestionIdx].id]) && answers[questions[currentQuestionIdx].id].includes(opt) ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-100 hover:border-slate-200 text-slate-600'}`}
+                      className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex flex-col gap-3 ${Array.isArray(answers[questions[currentQuestionIdx].id]) && answers[questions[currentQuestionIdx].id].includes(opt) ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-100 hover:border-slate-200 text-slate-600'}`}
                     >
-                      <div className={`w-6 h-6 rounded border-2 mr-4 flex items-center justify-center ${Array.isArray(answers[questions[currentQuestionIdx].id]) && answers[questions[currentQuestionIdx].id].includes(opt) ? 'bg-blue-500 border-blue-500' : 'border-slate-300'}`}>
-                        {Array.isArray(answers[questions[currentQuestionIdx].id]) && answers[questions[currentQuestionIdx].id].includes(opt) && <CheckCircle size={14} className="text-white"/>}
+                      <div className="flex items-center w-full">
+                        <div className={`w-6 h-6 rounded border-2 mr-4 flex items-center justify-center ${Array.isArray(answers[questions[currentQuestionIdx].id]) && answers[questions[currentQuestionIdx].id].includes(opt) ? 'bg-blue-500 border-blue-500' : 'border-slate-300'}`}>
+                          {Array.isArray(answers[questions[currentQuestionIdx].id]) && answers[questions[currentQuestionIdx].id].includes(opt) && <CheckCircle size={14} className="text-white"/>}
+                        </div>
+                        <span className="flex-1">{opt}</span>
                       </div>
-                      {opt}
+                      {questions[currentQuestionIdx].optionImages?.[i] && (
+                        <div className="pl-10 w-full">
+                          <img 
+                            src={questions[currentQuestionIdx].optionImages![i]} 
+                            alt={`Option ${i}`} 
+                            className="max-h-32 rounded-xl border border-slate-100 object-contain bg-white"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      )}
                     </button>
                   ))}
 

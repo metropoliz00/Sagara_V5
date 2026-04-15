@@ -50,7 +50,6 @@ interface DashboardContainerProps {
   kktpMap?: Record<string, number>;
   subjects: Subject[];
   materials?: Material[];
-  dbStatus: { ok: boolean; message: string };
 }
 
 const DashboardContainer: React.FC<DashboardContainerProps> = ({
@@ -91,8 +90,7 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({
   bookLoans,
   kktpMap,
   subjects,
-  materials = [],
-  dbStatus
+  materials = []
 }) => {
   if (isStudentRole) {
     if (!myStudentData) {
@@ -167,7 +165,6 @@ const DashboardContainer: React.FC<DashboardContainerProps> = ({
       hasNewMessages={hasNewMessages}
       unreadMessageCount={unreadMessageCount}
       kktpMap={kktpMap}
-      dbStatus={dbStatus}
     />
   );
 };

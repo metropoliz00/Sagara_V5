@@ -33,7 +33,6 @@ interface DashboardProps {
   hasNewMessages?: boolean;
   unreadMessageCount?: number;
   kktpMap?: Record<string, number>;
-  dbStatus: { ok: boolean; message: string };
 }
 
 const COLORS = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#14B8A6', '#6366F1', '#84CC16', '#D946EF'];
@@ -45,8 +44,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   learningDocumentation = [],
   learningReports = [],
   hasNewMessages = false, unreadMessageCount = 0,
-  kktpMap = {},
-  dbStatus
+  kktpMap = {}
 }) => {
   const navigate = useNavigate();
   const [isFabOpen, setIsFabOpen] = useState(false);
@@ -386,15 +384,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="relative">
-            {/* Database Status Badge */}
-            <div className={`absolute -top-6 left-0 flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all ${
-                dbStatus.ok 
-                ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                : 'bg-red-50 text-red-600 border-red-100 animate-pulse'
-            }`}>
-                <div className={`w-1.5 h-1.5 rounded-full mr-2 ${dbStatus.ok ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-                {dbStatus.message}
-            </div>
             <h1 className="text-2xl font-bold text-gray-800 flex items-center mt-2">
               {getGreetingIcon(getGreeting())}
               <span>Selamat {getGreeting()}, <span className="text-[#5AB2FF]">{(teacherName && teacherName !== 'undefined') ? teacherName : 'Bapak/Ibu Guru'}</span> 👋</span>

@@ -1845,7 +1845,6 @@ const AppContent: React.FC = () => {
                         subjects={MOCK_SUBJECTS}
                         kktpMap={kktpMap}
                         materials={materials}
-                        dbStatus={dbStatus}
                     />
                 } />
                 <Route path="/dashboard" element={<Navigate to="/" replace />} />
