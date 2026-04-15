@@ -31,10 +31,28 @@ const ExamSession: React.FC = () => {
   const [showQuestionList, setShowQuestionList] = useState(false);
   const [fontSize, setFontSize] = useState<'normal' | 'large' | 'xlarge'>('normal');
 
+  const [studentName, setStudentName] = useState<string>('');
+
   useEffect(() => {
     const user = localStorage.getItem('sagara_user');
     if (user) {
-      setCurrentUser(JSON.parse(user));
+      const parsedUser = JSON.parse(user);
+      setCurrentUser(parsedUser);
+      setStudentName(parsedUser.fullName || parsedUser.username || 'Siswa');
+      
+      // If fullName is missing, try to fetch from students list
+      if (!parsedUser.fullName && parsedUser.studentId) {
+        apiService.getStudents(parsedUser).then(students => {
+          const student = students.find(s => s.id === parsedUser.studentId);
+          if (student && student.name) {
+            setStudentName(student.name);
+            // Update local storage to prevent future fetches
+            const updatedUser = { ...parsedUser, fullName: student.name };
+            localStorage.setItem('sagara_user', JSON.stringify(updatedUser));
+            setCurrentUser(updatedUser);
+          }
+        });
+      }
     } else {
       navigate('/');
     }
@@ -178,7 +196,7 @@ const ExamSession: React.FC = () => {
       const finalResult: Omit<StudentExamResult, 'id' | 'completedAt'> = {
         assessmentId: assessment.id,
         studentId: currentUser.id,
-        studentName: currentUser.fullName || currentUser.username || 'Siswa',
+        studentName: studentName,
         score,
         totalPoints,
         answers
@@ -289,7 +307,7 @@ const ExamSession: React.FC = () => {
             </div>
             <div className="grid grid-cols-3 gap-4 border-b border-slate-200 pb-4">
               <div className="text-slate-500 text-sm">Nama Siswa</div>
-              <div className="col-span-2 font-bold text-slate-800 uppercase">{currentUser?.fullName || currentUser?.username}</div>
+              <div className="col-span-2 font-bold text-slate-800 uppercase">{studentName}</div>
             </div>
             <div className="grid grid-cols-3 gap-4 border-b border-slate-200 pb-4">
               <div className="text-slate-500 text-sm">NISN</div>
@@ -378,11 +396,11 @@ const ExamSession: React.FC = () => {
           
           <div className="flex items-center text-right">
             <div className="mr-3">
-              <div className="font-bold text-slate-800 text-sm">{currentUser?.fullName || currentUser?.username}</div>
+              <div className="font-bold text-slate-800 text-sm">{studentName}</div>
               <div className="text-xs text-slate-500">{assessment?.subjectId}</div>
             </div>
             <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center font-bold text-slate-600">
-              {(currentUser?.fullName || currentUser?.username || 'S')[0].toUpperCase()}
+              {(studentName || 'S')[0].toUpperCase()}
             </div>
           </div>
 

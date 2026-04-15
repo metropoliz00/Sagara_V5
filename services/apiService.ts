@@ -54,14 +54,18 @@ export const apiService = {
     if (error || !data) return null;
 
     let nisn = undefined;
+    let studentName = undefined;
     if (data.role === 'siswa' && data.student_id) {
-      const { data: studentData } = await supabase.from('students').select('nisn').eq('id', data.student_id).single();
-      if (studentData) nisn = studentData.nisn;
+      const { data: studentData } = await supabase.from('students').select('nisn, name').eq('id', data.student_id).single();
+      if (studentData) {
+        nisn = studentData.nisn;
+        studentName = studentData.name;
+      }
     }
 
     return {
       ...data,
-      fullName: data.full_name,
+      fullName: data.full_name || studentName || data.username,
       birthInfo: data.birth_info,
       classId: data.class_id,
       studentId: data.student_id,
@@ -79,14 +83,18 @@ export const apiService = {
     if (error || !data) return null;
 
     let nisn = undefined;
+    let studentName = undefined;
     if (data.role === 'siswa' && data.student_id) {
-      const { data: studentData } = await supabase.from('students').select('nisn').eq('id', data.student_id).single();
-      if (studentData) nisn = studentData.nisn;
+      const { data: studentData } = await supabase.from('students').select('nisn, name').eq('id', data.student_id).single();
+      if (studentData) {
+        nisn = studentData.nisn;
+        studentName = studentData.name;
+      }
     }
 
     return {
       ...data,
-      fullName: data.full_name,
+      fullName: data.full_name || studentName || data.username,
       birthInfo: data.birth_info,
       classId: data.class_id,
       studentId: data.student_id,
